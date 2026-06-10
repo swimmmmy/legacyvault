@@ -224,10 +224,15 @@ let contract = null, contractReadOnly = null, userAddress = null, pollInterval =
 const connectButtonMarkup = document.getElementById('mm-btn').innerHTML;
 
 /* ── localStorage keys ─────────────────────────── */
-const WILL_KEY   = 'lv_will_v2';
-const HEIRS_KEY  = 'lv_heirs_v2';
-const SCHED_KEY  = 'lv_scheduled_v1';
+const WILL_KEY    = 'lv_will_v2';
+const HEIRS_KEY   = 'lv_heirs_v2';
+const SCHED_KEY   = 'lv_scheduled_v1';
 const EJSCONF_KEY = 'lv_emailjs_config';
+const OWNER_KEY   = 'lv_owner_config';
+
+// session flags (reset on page reload)
+let warnEmailSent   = false;
+let expiryEmailSent = false;
 
 /* ── Will helpers ──────────────────────────────── */
 function loadWill() {
@@ -250,6 +255,42 @@ function getEmailjsConfig() {
         publicKey:  '0cAN7uuUhTdvZllao',
         fromName:   'LegacyVault'
     };
+}
+
+/* ── Owner config ──────────────────────────────── */
+function getOwnerConfig() {
+    try { return JSON.parse(localStorage.getItem(OWNER_KEY)) || {}; } catch { return {}; }
+}
+window.saveOwnerConfig = function() {
+    const cfg = {
+        email: document.getElementById('owner-email')?.value.trim() || '',
+        name:  document.getElementById('owner-name')?.value.trim()  || ''
+    };
+    localStorage.setItem(OWNER_KEY, JSON.stringify(cfg));
+    const el = document.getElementById('owner-status');
+    if (el) { el.textContent = '✓ Saved'; el.style.color = '#5fc87a'; setTimeout(() => { el.textContent = ''; }, 2500); }
+};
+
+/* ── Warning / Expiry emails ───────────────────── */
+async function sendWarningEmail() {
+    const owner = getOwnerConfig();
+    if (!owner.email) return;
+    await sendEmailNow(
+        { name: owner.name || 'Owner', email: owner.email, wallet: '', pct: '' },
+        '⚠️ LegacyVault Heartbeat이 곧 만료됩니다!\n\n15초 내에 체크인하지 않으면 수혜자에게 자산이 전달됩니다.\n\n지금 바로 확인하세요:\nhttps://swimmmmy.github.io/legacyvault/index_demo.html'
+    );
+}
+
+async function sendExpiryEmails() {
+    const heirs   = loadHeirs().filter(h => h.email);
+    const will    = loadWill();
+    const owner   = getOwnerConfig();
+    const claimUrl = 'https://swimmmmy.github.io/legacyvault/index_demo.html';
+    for (const h of heirs) {
+        await sendEmailNow(h,
+            `${owner.name || 'Owner'}님의 Heartbeat가 만료되었습니다.\n\n유산을 수령하려면 아래 링크에서 지갑을 연결하세요:\n${claimUrl}\n\n─────────────────\n${will.msg || '(유언장 메시지 없음)'}`
+        );
+    }
 }
 
 /* ── Scheduled messages ────────────────────────── */
@@ -387,6 +428,16 @@ function buildAboutContent() {
         <a href="https://emailjs.com" target="_blank" style="color:rgba(255,255,255,.55);text-decoration:underline">emailjs.com</a>
         → Add Email Service → Create Template → copy IDs below.
     </p>
+    <div class="section-label" style="margin-top:.2rem">Owner 알림 설정</div>
+    <p style="color:rgba(255,255,255,.45);font-size:.78rem;line-height:1.6;font-family:Arial,sans-serif;margin-bottom:.5rem">
+    Heartbeat 만료 15초 전 경고 이메일 + 만료 시 수혜자 자동 알림을 위해 Owner 이메일을 입력하세요.
+    </p>
+    <input type="email" id="owner-email" class="settings-input" placeholder="Owner 이메일" value="${getOwnerConfig().email || ''}">
+    <input type="text"  id="owner-name"  class="settings-input" placeholder="Owner 이름 (수혜자에게 표시됨)" value="${getOwnerConfig().name || ''}">
+    <button class="will-save-btn" onclick="saveOwnerConfig()" style="margin-top:.3rem">Save Owner Info</button>
+    <div class="will-status" id="owner-status"></div>
+
+    <div class="section-label" style="margin-top:1.2rem">EmailJS 설정</div>
     <input type="text" id="ejs-service"  class="settings-input" placeholder="Service ID  (e.g. service_xxxxxx)" value="${cfg.serviceId || ''}">
     <input type="text" id="ejs-template" class="settings-input" placeholder="Template ID (e.g. template_xxxxxx)" value="${cfg.templateId || ''}">
     <input type="text" id="ejs-pubkey"   class="settings-input" placeholder="Public Key" value="${cfg.publicKey || ''}">
@@ -622,9 +673,11 @@ async function pollContractStatus() {
             if (userAddress && userAddress.toLowerCase() !== ownerAddr.toLowerCase()) {
                 btn.textContent = 'RELEASE ASSETS'; btn.onclick = releaseAssets; btn.disabled = false; copy.textContent = 'Grace period - claim inheritance';
             }
-        } else if (secs <= 5) {
+            if (!expiryEmailSent) { expiryEmailSent = true; sendExpiryEmails(); }
+        } else if (secs <= 15 && secs > 0) {
             document.body.classList.add('state-warning');
             stateLabel.textContent = 'CHECK IN SOON'; display.textContent = `${secs} SEC LEFT`; dateLabel.textContent = `Resets in ${secs}s`;
+            if (!warnEmailSent) { warnEmailSent = true; sendWarningEmail(); }
         } else {
             stateLabel.textContent = `YOU'RE STILL WITH US`; display.textContent = `${secs} SEC LEFT`; dateLabel.textContent = `${bal} POL secured · Resets in ${secs}s`;
         }
