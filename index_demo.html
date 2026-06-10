@@ -4,628 +4,124 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LegacyVault</title>
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Barlow+Condensed:wght@800;900&display=swap"
-          rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Barlow+Condensed:wght@800;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <style>
-        *, *::before, *::after {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html, body {
-            width: 100%;
-            height: 100%;
-            min-height: 100%;
-            background: #0d1a12;
-        }
-
-        body {
-            overflow-x: hidden;
-            color: #fff;
-        }
-
-        button {
-            font: inherit;
-        }
-
-        .bg {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-        }
-
-        .bg-photo {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            object-position: center 40%;
-            filter: contrast(1.15) saturate(0.75) brightness(0.78) sepia(0.18);
-        }
-
-        .bg-overlay {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(180deg, rgba(10, 22, 14, .45) 0%, rgba(8, 18, 10, .1) 40%, rgba(6, 14, 8, .55) 100%);
-        }
-
-        .bg-fade {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 45%;
-            background: linear-gradient(to top, rgba(8, 18, 10, .7) 0%, transparent 100%);
-        }
-
-        .friends-text {
-            position: fixed;
-            z-index: 10;
-            top: 8%;
-            left: 50%;
-            transform: translateX(-30%);
-            width: clamp(17.5rem, 40vw, 35rem);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .friends-line {
-            display: block;
-            font-family: 'Caveat', cursive;
-            font-weight: 600;
-            font-size: clamp(1.25rem, 2.2vw, 1.9rem);
-            color: #F5C842;
-            line-height: 1;
-            letter-spacing: .02em;
-            text-shadow: 0 0.0625rem 0.625rem rgba(0, 0, 0, .6);
-            white-space: nowrap;
-            opacity: 0;
-        }
-
-        .friends-line:nth-child(1) {
-            padding-left: 20%;
-            margin-bottom: .85em;
-            animation: fIn .5s ease .2s forwards
-        }
-
-        .friends-line:nth-child(2) {
-            padding-left: 14%;
-            margin-bottom: .85em;
-            animation: fIn .5s ease .55s forwards
-        }
-
-        .friends-line:nth-child(3) {
-            padding-left: 28%;
-            margin-bottom: .85em;
-            animation: fIn .5s ease .9s forwards
-        }
-
-        .friends-line:nth-child(4) {
-            padding-left: 5%;
-            margin-bottom: .85em;
-            animation: fIn .5s ease 1.25s forwards
-        }
-
-        .friends-line:nth-child(5) {
-            padding-left: 28%;
-            margin-bottom: .85em;
-            animation: fIn .5s ease 1.6s forwards
-        }
-
-        .friends-line:nth-child(6) {
-            padding-left: 14%;
-            animation: fIn .5s ease 1.95s forwards
-        }
-
-        @keyframes fIn {
-            from {
-                opacity: 0;
-                transform: translateY(0.3125rem)
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0)
-            }
-        }
-
-        nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 20;
-            padding: 1.75rem 2.5rem;
-        }
-
-        .nav-brand {
-            font-family: 'Caveat', cursive;
-            font-weight: 700;
-            font-size: 1.1rem;
-            color: rgba(255, 255, 255, .9);
-            text-shadow: 0 0.0625rem 0.5rem rgba(0, 0, 0, .5);
-            line-height: 1;
-            margin-bottom: 0.25rem;
-        }
-
-        .nav-sub {
-            font-family: 'Caveat', cursive;
-            font-size: .85rem;
-            font-weight: 500;
-            color: rgba(255, 255, 255, .4);
-        }
-
-        /* METAMASK 버튼 */
-        .mm-wrap {
-            position: fixed;
-            z-index: 20;
-            bottom: 3rem;
-            left: 0;
-            right: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-            opacity: 0;
-            animation: fIn .8s ease 2.6s forwards;
-        }
-
-        /* 타이머 스타일 (단일 컴포넌트) */
-        .timer-wrap {
-            position: fixed;
-            z-index: 15;
-            left: 0;
-            right: 0;
-            bottom: 14rem;
-            display: none;
-            opacity: 0;
-            text-align: center;
-        }
-        .timer-wrap.visible {
-            display: flex;
-            justify-content: center;
-            animation: fIn .6s ease forwards;
-        }
-
-        .timer-box {
-            font-family: 'Caveat', cursive;
-            left: 45%;
-            color: #F5C842;
-            text-shadow: 0 0 0.9375rem rgba(245, 200, 66, 0.4);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-        }
-
-        .timer-state {
-            font-size: clamp(.8rem, 1vw, .95rem);
-            font-family: Arial, sans-serif;
-            font-weight: 700;
-            letter-spacing: .18em;
-            margin-bottom: .4rem;
-        }
-
-        #timer-display {
-            font-size: clamp(2.4rem, 4.4vw, 4.5rem);
-            font-weight: 700;
-            line-height: .95;
-        }
-
-        .timer-date {
-            margin-top: .65rem;
-            color: #E6D115;
-            font-family: Arial, sans-serif;
-            font-size: .76rem;
-            letter-spacing: .05em;
-        }
-
-
-        .mm-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.625rem;
-            background: rgba(255, 140, 0, 0.15);
-            border: 0.0625rem solid rgba(255, 140, 0, 0.45);
-            backdrop-filter: blur(0.75rem);
-            color: #F5C842;
-            padding: 0.8125rem 2rem;
-            border-radius: 3.125rem;
-            font-family: 'Caveat', cursive;
-            font-weight: 700;
-            font-size: 1.05rem;
-            letter-spacing: .04em;
-            cursor: pointer;
-            transition: all .25s ease;
-            white-space: nowrap;
-        }
-
-        .mm-btn:hover {
-            background: rgba(255, 140, 0, .25);
-            border-color: rgba(255, 140, 0, .7);
-            transform: translateY(-0.125rem);
-        }
-
-        .mm-btn:focus-visible,
-        .status-item:focus-visible,
-        .sheet-close:focus-visible {
-            outline: 0.125rem solid #fff;
-            outline-offset: 0.25rem;
-        }
-
-        .mm-btn.connected {
-            background: rgba(245, 200, 66, .12);
-            border-color: rgba(245, 200, 66, .35);
-            color: #F5C842;
-            font-family: monospace;
-            font-size: .82rem;
-            letter-spacing: 0;
-            cursor: default;
-        }
-
-        .mm-btn.connected:hover {
-            transform: none;
-        }
-
-        /*  heartbeat*/
-        .heartbeat {
-            position: fixed;
-            bottom: 13rem;
-            left: 0;
-            width: 100%;
-            height: 6.25rem;
-            z-index: 5;
-            overflow: hidden;
-            background: transparent;
-            pointer-events: none;
-            --cursor-x: 50%;
-            --cursor-y: 50%;
-            --heartbeat-opacity: .72;
-            transition: filter .3s ease;
-        }
-
-        .heartbeat::after {
-            content: '';
-            position: absolute;
-            left: var(--cursor-x);
-            top: var(--cursor-y);
-            width: 5rem;
-            height: 5rem;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(245, 200, 66, .16), transparent 68%);
-            opacity: 0;
-            transform: translate(-50%, -50%) scale(.7);
-            transition: opacity .25s ease, transform .25s ease;
-        }
-
-        .heartbeat.is-interactive::after {
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
-        }
-
-        .heartbeat.is-interactive .heartbeat-line {
-            opacity: 1;
-            filter: drop-shadow(0 0 0.2rem rgba(245, 200, 66, .55));
-        }
-
-        .heartbeat.confirmed .heartbeat-line {
-            animation: heartbeat-confirm .9s ease-out;
-            stroke-width: 2;
-        }
-
-        .heartbeat.confirmed .heartbeat-echo {
-            animation: heartbeat-echo .9s ease-out;
-        }
-
-        @keyframes heartbeat-confirm {
-            0% {
-                opacity: .2;
-                stroke-dashoffset: 1;
-            }
-            35% {
-                opacity: 1;
-                stroke-dashoffset: .25;
-            }
-            55% {
-                opacity: .55;
-                stroke-dashoffset: .1;
-            }
-            72% {
-                opacity: 1;
-                stroke-dashoffset: -.25;
-            }
-            100% {
-                opacity: .2;
-                stroke-dashoffset: -1;
-            }
-        }
-
-        @keyframes heartbeat-echo {
-            0%, 32% {
-                opacity: 0;
-                stroke-dashoffset: 1;
-            }
-            58% {
-                opacity: .32;
-                stroke-dashoffset: .15;
-            }
-            100% {
-                opacity: 0;
-                stroke-dashoffset: -1;
-            }
-        }
-
-        .checkin-copy {
-            color: rgba(255, 255, 255, .58);
-            font-family: Arial, sans-serif;
-            font-size: .7rem;
-            letter-spacing: .08em;
-            text-transform: uppercase;
-        }
-
-        .status-bar {
-            position: fixed;
-            z-index: 20;
-            right: 2rem;
-            top: .85rem;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity .6s ease;
-        }
-
-        .status-item {
-            appearance: none;
-            border: 0;
-            border-right: 0.0625rem solid rgba(255, 255, 255, .2);
-            padding: .25rem 1.1rem;
-            background: transparent;
-            color: rgba(255, 255, 255, .72);
-            font-family: Arial, sans-serif;
-            font-size: .68rem;
-            font-weight: 700;
-            letter-spacing: .1em;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        .status-item:last-child {
-            border-right: 0;
-        }
-
-        .status-item:hover {
-            color: #F5C842;
-        }
-
-        .status-item.state-safe {
-            color: #F5C842;
-        }
-
-        .bottom-sheet {
-            position: fixed;
-            z-index: 40;
-            inset: 0;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            background: rgba(2, 8, 4, .62);
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity .25s ease, visibility .25s ease;
-        }
-
-        .bottom-sheet.open {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .sheet-panel {
-            width: min(100%, 44rem);
-            padding: 1.5rem 1.5rem 2rem;
-            border: 0.0625rem solid rgba(245, 200, 66, .25);
-            border-bottom: 0;
-            border-radius: 1.5rem 1.5rem 0 0;
-            background: rgba(9, 22, 13, .96);
-            backdrop-filter: blur(1.25rem);
-            transform: translateY(100%);
-            transition: transform .3s ease;
-        }
-
-        .bottom-sheet.open .sheet-panel {
-            transform: translateY(0);
-        }
-
-        .sheet-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 1.25rem;
-        }
-
-        .sheet-title {
-            color: #F5C842;
-            font-family: 'Caveat', cursive;
-            font-size: 1.7rem;
-        }
-
-        .sheet-close {
-            width: 2.25rem;
-            height: 2.25rem;
-            border: 0.0625rem solid rgba(255, 255, 255, .18);
-            border-radius: 50%;
-            background: transparent;
-            color: #fff;
-            cursor: pointer;
-        }
-
-        .sheet-content {
-            color: rgba(255, 255, 255, .75);
-            font-family: Arial, sans-serif;
-            font-size: .88rem;
-            line-height: 1.7;
-        }
-
-        .sheet-row {
-            display: flex;
-            justify-content: space-between;
-            gap: 1rem;
-            padding: .8rem 0;
-            border-bottom: 0.0625rem solid rgba(255, 255, 255, .08);
-        }
-
-        .sheet-row strong {
-            color: #fff;
-            text-align: right;
-        }
-
-        body.state-warning .timer-box,
-        body.state-warning .status-item.state-safe {
-            color: #ff9f43;
-        }
-
-        body.state-pending .timer-box,
-        body.state-pending .status-item.state-safe {
-            color: #ff5c5c;
-        }
-
-        body.state-released .timer-box,
-        body.state-released .status-item.state-safe {
-            color: #a7aca9;
-        }
-
-        .heartbeat svg {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
-
-        .heartbeat-line {
-            fill: none;
-            stroke: #F5C842;
-            stroke-width: 1.35;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            vector-effect: non-scaling-stroke;
-            stroke-dasharray: 1;
-            stroke-dashoffset: 1;
-            opacity: var(--heartbeat-opacity);
-            filter: drop-shadow(0 0 0.12rem rgba(245, 200, 66, .42));
-            animation: heartbeat-draw 1.8s linear infinite;
-            transition: opacity .25s ease, filter .25s ease, stroke .25s ease;
-        }
-
-        .heartbeat-echo {
-            fill: none;
-            stroke: #F5C842;
-            stroke-width: .8;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            vector-effect: non-scaling-stroke;
-            opacity: .13;
-            transform: translateY(2px);
-        }
-
-        @keyframes heartbeat-draw {
-            0% {
-                stroke-dashoffset: 1;
-                opacity: 0;
-            }
-
-            10% {
-                opacity: 1;
-            }
-
-            75% {
-                stroke-dashoffset: 0;
-                opacity: 1;
-            }
-
-            100% {
-                stroke-dashoffset: -1;
-                opacity: 0;
-            }
-        }
-
-        @media (max-width: 48rem) {
-            .friends-text {
-                position: relative;
-                top: auto;
-                left: auto;
-                transform: none;
-                width: 100%;
-                min-height: 100svh;
-                padding: 5.5rem 1rem 15rem;
-            }
-
-            .friends-line {
-                font-size: clamp(1rem, 5vw, 1.5rem);
-                white-space: normal;
-                text-align: center;
-            }
-
-            .friends-line:nth-child(n) {
-                padding-left: 0;
-                margin-bottom: 0.5rem;
-            }
-
-            .timer-wrap {
-                margin-top: 3rem;
-                margin-right: 0;
-            }
-
-            #timer-display {
-                font-size: 2.75rem;
-            }
-
-            nav {
-                padding: 1rem;
-            }
-
-            .mm-wrap {
-                bottom: 4.2rem;
-            }
-
-            .mm-btn {
-                padding: 0.6rem 1.5rem;
-                font-size: 0.9rem;
-            }
-
-            .heartbeat {
-                bottom: 11rem;
-                height: 4.5rem;
-            }
-
-            .status-bar {
-                bottom: .65rem;
-                width: 100%;
-            }
-
-            .status-item {
-                flex: 1;
-                padding: .35rem .25rem;
-                font-size: .55rem;
-                letter-spacing: .05em;
-            }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            *,
-            *::before,
-            *::after {
-                scroll-behavior: auto !important;
-                animation-duration: .01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: .01ms !important;
-            }
-
-            .heartbeat-line {
-                animation: none;
-                stroke-dashoffset: 0;
-            }
-
-        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; background: #0d1a12; }
+        body { overflow-x: hidden; color: #fff; }
+        button { font: inherit; }
+
+        .bg { position: fixed; inset: 0; z-index: 0; }
+        .bg-photo { width: 100%; height: 100%; object-fit: cover; object-position: center 40%; filter: contrast(1.15) saturate(0.75) brightness(0.78) sepia(0.18); }
+        .bg-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,22,14,.45) 0%, rgba(8,18,10,.1) 40%, rgba(6,14,8,.55) 100%); }
+        .bg-fade { position: absolute; bottom: 0; left: 0; right: 0; height: 45%; background: linear-gradient(to top, rgba(8,18,10,.7) 0%, transparent 100%); }
+
+        .friends-text { position: fixed; z-index: 10; top: 8%; left: 50%; transform: translateX(-30%); width: clamp(17.5rem, 40vw, 35rem); display: flex; flex-direction: column; }
+        .friends-line { display: block; font-family: 'Caveat', cursive; font-weight: 600; font-size: clamp(1.25rem, 2.2vw, 1.9rem); color: #F5C842; line-height: 1; letter-spacing: .02em; text-shadow: 0 0.0625rem 0.625rem rgba(0,0,0,.6); white-space: nowrap; opacity: 0; }
+        .friends-line:nth-child(1) { padding-left: 20%; margin-bottom: .85em; animation: fIn .5s ease .2s forwards }
+        .friends-line:nth-child(2) { padding-left: 14%; margin-bottom: .85em; animation: fIn .5s ease .55s forwards }
+        .friends-line:nth-child(3) { padding-left: 28%; margin-bottom: .85em; animation: fIn .5s ease .9s forwards }
+        .friends-line:nth-child(4) { padding-left: 5%; margin-bottom: .85em; animation: fIn .5s ease 1.25s forwards }
+        .friends-line:nth-child(5) { padding-left: 28%; margin-bottom: .85em; animation: fIn .5s ease 1.6s forwards }
+        .friends-line:nth-child(6) { padding-left: 14%; animation: fIn .5s ease 1.95s forwards }
+
+        @keyframes fIn { from { opacity: 0; transform: translateY(0.3125rem) } to { opacity: 1; transform: translateY(0) } }
+
+        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 20; padding: 1.75rem 2.5rem; }
+        .nav-brand { font-family: 'Caveat', cursive; font-weight: 700; font-size: 1.1rem; color: rgba(255,255,255,.9); text-shadow: 0 0.0625rem 0.5rem rgba(0,0,0,.5); line-height: 1; margin-bottom: 0.25rem; }
+        .nav-sub { font-family: 'Caveat', cursive; font-size: .85rem; font-weight: 500; color: rgba(255,255,255,.4); }
+
+        .mm-wrap { position: fixed; z-index: 20; bottom: 3rem; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; gap: 1rem; opacity: 0; animation: fIn .8s ease 2.6s forwards; }
+
+        .timer-wrap { position: fixed; z-index: 15; left: 50%; transform: translateX(-50%); bottom: 14rem; display: none; opacity: 0; text-align: center; white-space: nowrap; }
+        .timer-wrap.visible { display: flex; justify-content: center; animation: fIn .6s ease forwards; }
+        .timer-box { font-family: 'Caveat', cursive; color: #F5C842; text-shadow: 0 0 0.9375rem rgba(245,200,66,0.4); display: flex; flex-direction: column; align-items: center; text-align: center; }
+        .timer-state { font-size: clamp(.8rem, 1vw, .95rem); font-family: Arial, sans-serif; font-weight: 700; letter-spacing: .18em; margin-bottom: .4rem; }
+        #timer-display { font-size: clamp(2.4rem, 4.4vw, 4.5rem); font-weight: 700; line-height: .95; }
+        .timer-date { margin-top: .65rem; color: #E6D115; font-family: Arial, sans-serif; font-size: .76rem; letter-spacing: .05em; }
+
+        .mm-btn { display: inline-flex; align-items: center; gap: 0.625rem; background: rgba(255,140,0,0.15); border: 0.0625rem solid rgba(255,140,0,0.45); backdrop-filter: blur(0.75rem); color: #F5C842; padding: 0.8125rem 2rem; border-radius: 3.125rem; font-family: 'Caveat', cursive; font-weight: 700; font-size: 1.05rem; letter-spacing: .04em; cursor: pointer; transition: all .25s ease; white-space: nowrap; }
+        .mm-btn:hover { background: rgba(255,140,0,.25); border-color: rgba(255,140,0,.7); transform: translateY(-0.125rem); }
+        .mm-btn:disabled { opacity: .6; cursor: default; transform: none; }
+        .checkin-copy { color: rgba(255,255,255,.58); font-family: Arial, sans-serif; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; }
+
+        .heartbeat { position: fixed; bottom: 13rem; left: 0; width: 100%; height: 6.25rem; z-index: 5; overflow: hidden; background: transparent; pointer-events: none; --cursor-x: 50%; --cursor-y: 50%; --heartbeat-opacity: .72; }
+        .heartbeat svg { display: block; width: 100%; height: 100%; }
+        .heartbeat-line { fill: none; stroke: #F5C842; stroke-width: 1.35; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; stroke-dasharray: 1; stroke-dashoffset: 1; opacity: var(--heartbeat-opacity); filter: drop-shadow(0 0 0.12rem rgba(245,200,66,.42)); animation: heartbeat-draw 1.8s linear infinite; }
+        .heartbeat-echo { fill: none; stroke: #F5C842; stroke-width: .8; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; opacity: .13; }
+        @keyframes heartbeat-draw { 0% { stroke-dashoffset: 1; opacity: 0; } 10% { opacity: 1; } 75% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: -1; opacity: 0; } }
+
+        .status-bar { position: fixed; z-index: 20; right: 2rem; top: .85rem; display: flex; align-items: center; justify-content: flex-end; opacity: 0; visibility: hidden; transition: opacity .6s ease; }
+        .status-item { appearance: none; border: 0; border-right: 0.0625rem solid rgba(255,255,255,.2); padding: .25rem 1.1rem; background: transparent; color: rgba(255,255,255,.72); font-family: Arial, sans-serif; font-size: .68rem; font-weight: 700; letter-spacing: .1em; cursor: pointer; white-space: nowrap; }
+        .status-item:last-child { border-right: 0; }
+        .status-item:hover { color: #F5C842; }
+        .status-item.state-safe { color: #F5C842; }
+
+        /* Bottom Sheet */
+        .bottom-sheet { position: fixed; z-index: 40; inset: 0; display: flex; align-items: flex-end; justify-content: center; background: rgba(2,8,4,.62); opacity: 0; visibility: hidden; transition: opacity .25s ease, visibility .25s ease; }
+        .bottom-sheet.open { opacity: 1; visibility: visible; }
+        .sheet-panel { width: min(100%, 44rem); padding: 1.5rem 1.5rem 2rem; border: 0.0625rem solid rgba(245,200,66,.25); border-bottom: 0; border-radius: 1.5rem 1.5rem 0 0; background: rgba(9,22,13,.96); backdrop-filter: blur(1.25rem); transform: translateY(100%); transition: transform .3s ease; }
+        .bottom-sheet.open .sheet-panel { transform: translateY(0); }
+        .sheet-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+        .sheet-title { color: #F5C842; font-family: 'Caveat', cursive; font-size: 1.7rem; }
+        .sheet-close { width: 2.25rem; height: 2.25rem; border: 0.0625rem solid rgba(255,255,255,.18); border-radius: 50%; background: transparent; color: #fff; cursor: pointer; }
+        .sheet-content { color: rgba(255,255,255,.75); font-family: Arial, sans-serif; font-size: .88rem; line-height: 1.7; }
+        .sheet-row { display: flex; justify-content: space-between; gap: 1rem; padding: .8rem 0; border-bottom: 0.0625rem solid rgba(255,255,255,.08); }
+        .sheet-row strong { color: #fff; text-align: right; }
+
+        /* Setup Overlay */
+        .setup-overlay { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: rgba(2,8,4,.85); opacity: 0; visibility: hidden; transition: opacity .3s ease, visibility .3s ease; }
+        .setup-overlay.open { opacity: 1; visibility: visible; }
+        .setup-panel { width: min(90%, 28rem); background: rgba(9,22,13,.98); border: 1px solid rgba(245,200,66,.25); border-radius: 1.5rem; padding: 2rem 1.75rem 1.75rem; }
+        .setup-title { font-family: 'Caveat', cursive; font-size: 1.9rem; color: #F5C842; margin-bottom: .4rem; }
+        .setup-sub { font-family: Arial, sans-serif; font-size: .82rem; color: rgba(255,255,255,.45); margin-bottom: 1.75rem; letter-spacing: .03em; }
+        .setup-label { font-family: Arial, sans-serif; font-size: .68rem; font-weight: 700; letter-spacing: .12em; color: rgba(255,255,255,.4); margin-bottom: .45rem; }
+        .setup-input { width: 100%; background: rgba(255,255,255,.06); border: 1px solid rgba(245,200,66,.25); border-radius: .6rem; padding: .7rem .9rem; color: #fff; font-family: monospace; font-size: .82rem; outline: none; transition: border-color .2s; margin-bottom: 1rem; }
+        .setup-input:focus { border-color: rgba(245,200,66,.6); }
+        .setup-input::placeholder { color: rgba(255,255,255,.25); }
+        .setup-btn { width: 100%; padding: .85rem; border-radius: .75rem; border: none; background: #F5C842; color: #0a1a0e; font-family: 'Caveat', cursive; font-size: 1.15rem; font-weight: 700; cursor: pointer; transition: opacity .2s; margin-top: .5rem; }
+        .setup-btn:hover { opacity: .88; }
+        .setup-btn:disabled { opacity: .4; cursor: default; }
+        .setup-status { margin-top: .75rem; font-family: Arial, sans-serif; font-size: .78rem; text-align: center; min-height: 1.2rem; color: rgba(255,255,255,.5); }
+        .setup-amount-row { display: flex; gap: .6rem; align-items: flex-end; margin-bottom: 1rem; }
+        .setup-amount-row .setup-input { margin-bottom: 0; flex: 1; }
+        .setup-unit { font-family: Arial, sans-serif; font-size: .82rem; color: #F5C842; font-weight: 700; padding-bottom: .75rem; }
+
+        body.state-warning .timer-box { color: #ff9f43; }
+        body.state-pending .timer-box { color: #ff5c5c; }
+        body.state-released .timer-box { color: #a7aca9; }
+
+        /* Will Overlay */
+        .will-overlay { position: fixed; inset: 0; z-index: 55; display: flex; align-items: center; justify-content: center; background: rgba(2,6,3,.92); opacity: 0; visibility: hidden; transition: opacity .3s ease, visibility .3s ease; overflow-y: auto; padding: 2rem 1rem; }
+        .will-overlay.open { opacity: 1; visibility: visible; }
+        .will-doc { width: min(100%, 38rem); background: #f9f5eb; border-radius: 1rem; overflow: hidden; box-shadow: 0 2rem 6rem rgba(0,0,0,.7); position: relative; }
+        .will-doc-header { background: #1a1a1a; padding: 1.5rem 2rem; display: flex; align-items: center; justify-content: space-between; }
+        .will-doc-title { font-family: 'Caveat', cursive; font-size: 1.6rem; color: #F5C842; }
+        .will-doc-meta { font-family: Arial, sans-serif; font-size: .7rem; color: rgba(255,255,255,.4); text-align: right; line-height: 1.6; }
+        .will-close { position: absolute; top: 1rem; right: 1rem; width: 2rem; height: 2rem; border-radius: 50%; border: 1px solid rgba(255,255,255,.2); background: transparent; color: rgba(255,255,255,.6); cursor: pointer; font-size: 1rem; z-index: 2; }
+        .will-body { padding: 2rem; }
+        .will-section { margin-bottom: 1.75rem; }
+        .will-section-title { font-family: Arial, sans-serif; font-size: .65rem; font-weight: 700; letter-spacing: .15em; color: #888; margin-bottom: .6rem; text-transform: uppercase; border-bottom: 1px solid #ddd; padding-bottom: .4rem; }
+        .will-textarea { width: 100%; min-height: 5rem; background: rgba(0,0,0,.04); border: 1px solid #ddd; border-radius: .5rem; padding: .75rem; font-family: 'Caveat', cursive; font-size: 1.05rem; color: #1a1a1a; line-height: 1.6; resize: vertical; outline: none; transition: border-color .2s; }
+        .will-textarea:focus { border-color: #F5C842; background: #fff; }
+        .will-textarea::placeholder { color: #bbb; font-size: .95rem; }
+        .will-textarea:read-only { background: transparent; border-color: transparent; cursor: default; }
+        .will-sig { display: flex; align-items: center; gap: 1rem; padding: 1rem 0; border-top: 1px solid #ddd; margin-top: .5rem; }
+        .will-sig-line { flex: 1; border-bottom: 1px solid #999; padding-bottom: .25rem; font-family: 'Caveat', cursive; font-size: 1rem; color: #333; }
+        .will-sig-date { font-family: Arial, sans-serif; font-size: .75rem; color: #888; white-space: nowrap; }
+        .will-actions { display: flex; gap: .75rem; padding: 0 2rem 1.75rem; }
+        .will-save-btn { flex: 1; padding: .8rem; border-radius: .6rem; border: none; background: #1a1a1a; color: #F5C842; font-family: 'Caveat', cursive; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: opacity .2s; }
+        .will-save-btn:hover { opacity: .85; }
+        .will-print-btn { padding: .8rem 1.2rem; border-radius: .6rem; border: 1px solid #ddd; background: transparent; color: #888; font-family: Arial, sans-serif; font-size: .8rem; cursor: pointer; transition: all .2s; }
+        .will-print-btn:hover { background: #f0f0f0; }
+        .will-status { padding: 0 2rem .5rem; font-family: Arial, sans-serif; font-size: .75rem; text-align: center; color: #999; min-height: 1rem; }
+        .will-sealed-banner { background: linear-gradient(135deg, #1a1a1a, #2a2a2a); padding: .7rem 2rem; display: flex; align-items: center; gap: .75rem; }
+        .will-sealed-dot { width: .5rem; height: .5rem; border-radius: 50%; background: #F5C842; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+        .will-sealed-text { font-family: Arial, sans-serif; font-size: .72rem; letter-spacing: .1em; color: rgba(255,255,255,.6); }
+        .will-item-btn { display: inline-flex; align-items: center; gap: .4rem; }
+        .will-item-btn .will-dot { width: .45rem; height: .45rem; background: #F5C842; border-radius: 50%; }
     </style>
 </head>
 <body>
@@ -647,50 +143,25 @@
     </div>
 </div>
 
-<!--  heartbeat-->
-
 <div class="heartbeat" role="img" aria-label="heartbeat">
     <svg viewBox="0 0 600 100" preserveAspectRatio="none">
-        <path
-                id="heartbeat-path"
-                class="heartbeat-line"
-                pathLength="1"
-                d="M 0 50
-     H 200
-     L 235 50
-     L 250 25
-     L 265 78
-     L 285 8
-     L 305 88
-     L 325 50
-     H 600"
-        />
-        <path
-                class="heartbeat-echo"
-                pathLength="1"
-                d="M 0 50 H 200 L 235 50 L 250 25 L 265 78 L 285 8 L 305 88 L 325 50 H 600"
-        />
+        <path class="heartbeat-line" pathLength="1" d="M 0 50 H 200 L 235 50 L 250 25 L 265 78 L 285 8 L 305 88 L 325 50 H 600"/>
+        <path class="heartbeat-echo" pathLength="1" d="M 0 50 H 200 L 235 50 L 250 25 L 265 78 L 285 8 L 305 88 L 325 50 H 600"/>
     </svg>
 </div>
 
 <div class="bg">
-    <img class="bg-photo" src="friends.jpg" alt=""
-         onerror="this.style.display='none';document.getElementById('bf').style.display='block';">
-    <div id="bf"
-         style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#0a1a0e,#1b3a22);"></div>
+    <img class="bg-photo" src="friends.jpg" alt="" onerror="this.style.display='none';document.getElementById('bf').style.display='block';">
+    <div id="bf" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#0a1a0e,#1b3a22);"></div>
     <div class="bg-overlay"></div>
     <div class="bg-fade"></div>
 </div>
-
 
 <nav>
     <div class="nav-brand">LegacyVault</div>
     <div class="nav-sub">made by SWIMMMMY</div>
 </nav>
 
-<!-- 타이머 -->
-
-<!-- METAMASK 버튼 -->
 <div class="mm-wrap">
     <button class="mm-btn" id="mm-btn" onclick="connectWallet()">
         <svg viewBox="0 0 36 36" style="width:1.25rem;height:1.25rem;flex-shrink:0">
@@ -708,129 +179,254 @@
     <span class="checkin-copy" id="checkin-copy">MetaMask connection required</span>
 </div>
 
-<div class="status-bar" aria-label="Vault status">
+<div class="status-bar" id="status-bar">
     <button class="status-item" type="button" data-sheet="assets">ASSETS</button>
     <button class="status-item" type="button" data-sheet="beneficiaries">BENEFICIARIES</button>
     <button class="status-item state-safe" type="button" data-sheet="protection">PROTECTED</button>
+    <button class="status-item" type="button" id="will-open-btn" onclick="openWill()">
+        <span class="will-item-btn"><span class="will-dot"></span>WILL</span>
+    </button>
     <button class="status-item" type="button" data-sheet="about">ABOUT</button>
 </div>
 
+<!-- Bottom Sheet -->
 <div class="bottom-sheet" id="bottom-sheet" aria-hidden="true">
     <section class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
         <div class="sheet-header">
             <h2 class="sheet-title" id="sheet-title"></h2>
-            <button class="sheet-close" id="sheet-close" type="button" aria-label="Close details">×</button>
+            <button class="sheet-close" id="sheet-close" type="button" aria-label="Close">×</button>
         </div>
         <div class="sheet-content" id="sheet-content"></div>
     </section>
 </div>
 
+<!-- Setup Overlay (새 유저) -->
+<div class="setup-overlay" id="setup-overlay">
+    <div class="setup-panel">
+        <div class="setup-title">Create Your Vault</div>
+        <div class="setup-sub">지금 바로 디지털 유산을 보호하세요</div>
+
+        <div class="setup-label">HEIR WALLET ADDRESS (수혜자 지갑 주소)</div>
+        <input class="setup-input" id="setup-heir" type="text" placeholder="0x..." />
+
+        <div class="setup-label">DEPOSIT AMOUNT</div>
+        <div class="setup-amount-row">
+            <input class="setup-input" id="setup-amount" type="number" placeholder="0.1" min="0.001" step="0.01" />
+            <span class="setup-unit">POL</span>
+        </div>
+
+        <button class="setup-btn" id="setup-btn" onclick="createVault()">CREATE MY VAULT</button>
+        <div class="setup-status" id="setup-status"></div>
+    </div>
+</div>
+
+<!-- Will Overlay -->
+<div class="will-overlay" id="will-overlay">
+    <div class="will-doc" id="will-doc">
+        <div class="will-doc-header">
+            <div class="will-doc-title">📜 나의 유언장</div>
+            <div class="will-doc-meta" id="will-meta"></div>
+            <button class="will-close" onclick="closeWill()">×</button>
+        </div>
+        <div class="will-sealed-banner" id="will-sealed-banner" style="display:none">
+            <div class="will-sealed-dot"></div>
+            <div class="will-sealed-text">SEALED — 볼트가 열릴 때 수혜자에게 공개됩니다</div>
+        </div>
+        <div class="will-body">
+            <div class="will-section">
+                <div class="will-section-title">01 · 재산 분배 의향</div>
+                <textarea class="will-textarea" id="will-assets" placeholder="내 디지털 자산과 코인을 어떻게 나누어 주기를 원하는지 적어주세요.&#10;예) 내 모든 자산은 딸에게 전합니다. 단, 연구 펀드로 10%는 남겨두길 바랍니다." rows="5"></textarea>
+            </div>
+            <div class="will-section">
+                <div class="will-section-title">02 · 수혜자에게 전하는 말</div>
+                <textarea class="will-textarea" id="will-message" placeholder="이 유언장을 읽게 될 당신에게 전하고 싶은 말을 써주세요.&#10;예) 이 글을 읽고 있다면, 나는 이미 떠난 뒤일 거야. 잘 지내길 바라..." rows="6"></textarea>
+            </div>
+            <div class="will-section">
+                <div class="will-section-title">03 · 마지막 바람</div>
+                <textarea class="will-textarea" id="will-wishes" placeholder="장례, 디지털 계정, 반려동물 등 부탁하고 싶은 것들을 적어주세요." rows="4"></textarea>
+            </div>
+            <div class="will-sig">
+                <div style="flex:1">
+                    <div style="font-family:Arial,sans-serif;font-size:.65rem;color:#aaa;margin-bottom:.3rem;letter-spacing:.1em">WALLET SIGNATURE</div>
+                    <div class="will-sig-line" id="will-sig-addr">지갑 연결 후 자동 서명</div>
+                </div>
+                <div class="will-sig-date" id="will-sig-date"></div>
+            </div>
+        </div>
+        <div class="will-status" id="will-status-msg"></div>
+        <div class="will-actions" id="will-actions">
+            <button class="will-save-btn" onclick="saveWill()">봉인하고 저장하기</button>
+            <button class="will-print-btn" onclick="printWill()">인쇄</button>
+        </div>
+    </div>
+</div>
+
+<!-- Demo Modal (MetaMask 없을 때) -->
+<div id="demo-modal-backdrop" style="position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s">
+    <div style="width:22rem;background:#1b1f2e;border-radius:1.25rem;padding:1.75rem 1.5rem 1.5rem;box-shadow:0 1.5rem 4rem rgba(0,0,0,.6);text-align:center">
+        <svg viewBox="0 0 35 33" style="width:3.5rem;height:3.5rem;margin:0 auto 1rem;display:block">
+            <path d="M32.9 1L20.2 10.3l2.3-5.5L32.9 1z" fill="#E17726"/>
+            <path d="M2.1 1l12.6 9.4-2.2-5.6L2.1 1z" fill="#E27625"/>
+        </svg>
+        <div style="font-family:Arial,sans-serif;font-weight:700;font-size:1rem;color:#fff;margin-bottom:.4rem">MetaMask 필요</div>
+        <div style="font-family:Arial,sans-serif;font-size:.82rem;color:rgba(255,255,255,.55);margin-bottom:1.4rem">Chrome MetaMask 익스텐션을 설치해주세요</div>
+        <div style="display:flex;gap:.75rem">
+            <button onclick="document.getElementById('demo-modal-backdrop').style.opacity='0';document.getElementById('demo-modal-backdrop').style.visibility='hidden'" style="flex:1;padding:.7rem;border-radius:.75rem;border:1px solid rgba(255,255,255,.18);background:transparent;color:rgba(255,255,255,.7);font-family:Arial,sans-serif;font-size:.88rem;font-weight:600;cursor:pointer">닫기</button>
+            <button onclick="window.open('https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn','_blank')" style="flex:1;padding:.7rem;border-radius:.75rem;border:none;background:#f6851b;color:#fff;font-family:Arial,sans-serif;font-size:.88rem;font-weight:700;cursor:pointer">설치하기</button>
+        </div>
+    </div>
+</div>
+
 <script>
-    // ── 컨트랙트 설정 ──
-    const CONTRACT_ADDRESS = '0xBDB98082fC0C1ba918FD7460ECf96BF46A3abEAe';
-    const CONTRACT_ABI = [
-        {"inputs":[{"internalType":"address payable","name":"_heir","type":"address"}],"stateMutability":"payable","type":"constructor"},
+    // ★ 팩토리 배포 후 주소 여기에 입력
+    const FACTORY_ADDRESS = 'DEPLOY_FACTORY_FIRST';
+
+    const FACTORY_ABI = [
+        {"inputs":[{"internalType":"address payable","name":"heir","type":"address"}],"name":"createVault","outputs":[],"stateMutability":"payable","type":"function"},
+        {"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"getVault","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+        {"inputs":[{"internalType":"address","name":"heir","type":"address"}],"name":"getVaultByHeir","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"}
+    ];
+
+    const VAULT_ABI = [
         {"inputs":[],"name":"heartbeat","outputs":[],"stateMutability":"nonpayable","type":"function"},
         {"inputs":[],"name":"release","outputs":[],"stateMutability":"nonpayable","type":"function"},
+        {"inputs":[{"internalType":"address payable","name":"_newHeir","type":"address"}],"name":"setHeir","outputs":[],"stateMutability":"nonpayable","type":"function"},
         {"inputs":[],"name":"getStatus","outputs":[{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"timeLeft","type":"uint256"},{"internalType":"bool","name":"isReleased","type":"bool"},{"internalType":"bool","name":"inGrace","type":"bool"}],"stateMutability":"view","type":"function"},
         {"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
         {"inputs":[],"name":"heir","outputs":[{"internalType":"address payable","name":"","type":"address"}],"stateMutability":"view","type":"function"},
-        {"inputs":[{"internalType":"address payable","name":"_newHeir","type":"address"}],"name":"setHeir","outputs":[],"stateMutability":"nonpayable","type":"function"},
         {"stateMutability":"payable","type":"receive"}
     ];
 
     let contract = null;
     let contractReadOnly = null;
+    let factoryReadOnly = null;
     let userAddress = null;
     let pollInterval = null;
-    let walletConnected = false;
-    const connectButtonMarkup = document.getElementById('mm-btn').innerHTML;
+    let currentVaultAddress = null;
 
     const sheetData = {
-        assets: {
-            title: 'Your Assets',
-            content: ``
-        },
-        beneficiaries: {
-            title: 'Beneficiaries',
-            content: ``
-        },
+        assets: { title: 'Your Assets', content: '' },
+        beneficiaries: { title: 'Beneficiaries', content: '' },
         protection: {
             title: 'Protection Status',
             content: `
-        <div class="sheet-row"><span>Heartbeat window</span><strong>60 seconds</strong></div>
-        <div class="sheet-row"><span>Grace period</span><strong>10 seconds</strong></div>
-        <div class="sheet-row"><span>Transfer status</span><strong id="sheet-transfer-state">Not scheduled</strong></div>`
-        }
-,
+            <div class="sheet-row"><span>Heartbeat window</span><strong>60 seconds</strong></div>
+            <div class="sheet-row"><span>Grace period</span><strong>10 seconds</strong></div>
+            <div class="sheet-row"><span>Network</span><strong>Polygon Amoy Testnet</strong></div>`
+        },
         about: {
             title: 'About LegacyVault',
             content: `
-        <div class="sheet-row"><span>서비스</span><strong>블록체인 기반 디지털 유언장</strong></div>
-        <div class="sheet-row" style="display:block;padding:.9rem 0;border-bottom:1px solid rgba(255,255,255,.08)"><p style="color:rgba(255,255,255,.75);font-size:.88rem;line-height:1.75">LegacyVault는 이더리움 스마트 컨트랙트를 통해 디지털 자산의 상속을 자동화합니다. 사용자가 주기적으로 생존 확인(heartbeat)을 하지 않으면, 미리 지정된 수혜자에게 자산이 자동으로 이전됩니다.</p></div>
-        <div class="sheet-row" style="display:block;padding:.9rem 0;border-bottom:1px solid rgba(255,255,255,.08)"><p style="color:rgba(255,255,255,.75);font-size:.88rem;line-height:1.75">중앙화된 기관 없이, 신뢰할 수 없는 환경에서도 유언을 집행할 수 있는 탈중앙화 솔루션입니다. 비밀번호, NFT, 암호화폐 등 온체인 자산을 안전하게 보호하세요.</p></div>
-        <div class="sheet-row"><span>기술 스택</span><strong>Ethereum · Solidity · MetaMask</strong></div>
-        <div class="sheet-row"><span>제작자</span><strong>SWIMMMMY</strong></div>`
-        }    };
+            <div class="sheet-row"><span>서비스</span><strong>블록체인 기반 디지털 유언장</strong></div>
+            <div class="sheet-row" style="display:block;padding:.9rem 0;border-bottom:1px solid rgba(255,255,255,.08)">
+                <p style="color:rgba(255,255,255,.75);font-size:.88rem;line-height:1.75">LegacyVault는 스마트 컨트랙트를 통해 디지털 자산의 상속을 자동화합니다. 주기적으로 생존 확인을 하지 않으면, 지정된 수혜자에게 자산이 자동으로 이전됩니다.</p>
+            </div>
+            <div class="sheet-row"><span>기술 스택</span><strong>Ethereum · Solidity · MetaMask</strong></div>
+            <div class="sheet-row"><span>제작자</span><strong>SWIMMMMY</strong></div>`
+        }
+    };
 
-    //심박수 기능
+    // Heartbeat animation
     function setHeartbeatBpm(bpm) {
-        const heartbeat = document.querySelector('.heartbeat');
-        if (heartbeat.dataset.bpm === String(bpm)) return;
-
         const line = document.querySelector('.heartbeat-line');
-        const duration = 120 / bpm;
-
-        heartbeat.dataset.bpm = String(bpm);
-        line.style.animationDuration = `${duration}s`;
+        if (line) line.style.animationDuration = `${120 / bpm}s`;
     }
-
     setHeartbeatBpm(80);
 
     function setupInteractiveHeartbeat() {
         const heartbeat = document.querySelector('.heartbeat');
         let frame;
-
-        document.addEventListener('pointermove', (event) => {
+        document.addEventListener('pointermove', (e) => {
             cancelAnimationFrame(frame);
             frame = requestAnimationFrame(() => {
                 const bounds = heartbeat.getBoundingClientRect();
-                const distance = Math.max(
-                    bounds.top - event.clientY,
-                    event.clientY - bounds.bottom,
-                    0
-                );
-                const isNear = distance < 90;
-                const x = Math.min(Math.max(event.clientX - bounds.left, 0), bounds.width);
-                const y = Math.min(Math.max(event.clientY - bounds.top, 0), bounds.height);
-
-                heartbeat.style.setProperty('--cursor-x', `${x}px`);
-                heartbeat.style.setProperty('--cursor-y', `${y}px`);
-                heartbeat.style.setProperty('--heartbeat-opacity', isNear ? '.95' : '.72');
-                heartbeat.classList.toggle('is-interactive', isNear);
-                setHeartbeatBpm(isNear ? 105 : 80);
+                const distance = Math.max(bounds.top - e.clientY, e.clientY - bounds.bottom, 0);
+                heartbeat.classList.toggle('is-interactive', distance < 90);
+                setHeartbeatBpm(distance < 90 ? 105 : 80);
             });
-        });
-
-        document.addEventListener('pointerleave', () => {
-            heartbeat.classList.remove('is-interactive');
-            heartbeat.style.setProperty('--heartbeat-opacity', '.72');
-            setHeartbeatBpm(80);
         });
     }
 
-    // ── 컨트랙트 상태 폴링 ──
+    function showTimer() {
+        document.querySelector('.timer-wrap').classList.add('visible');
+    }
+
+    function showSetup() {
+        document.getElementById('setup-overlay').classList.add('open');
+        const btn = document.getElementById('mm-btn');
+        btn.innerHTML = 'WALLET CONNECTED';
+        btn.disabled = true;
+        document.getElementById('checkin-copy').textContent = 'Set up your vault below';
+    }
+
+    function fmt(a) { return `${a.slice(0,6)}...${a.slice(-4)}`; }
+
+    async function loadDashboard(vaultAddr, userAddr) {
+        currentVaultAddress = vaultAddr;
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        contract = new ethers.Contract(vaultAddr, VAULT_ABI, signer);
+        contractReadOnly = new ethers.Contract(vaultAddr, VAULT_ABI, provider);
+
+        const ownerAddr = await contractReadOnly.owner();
+        const heirAddr = await contractReadOnly.heir();
+        const isOwner = userAddr.toLowerCase() === ownerAddr.toLowerCase();
+        willIsOwner = isOwner;
+
+        // 실제 잔액 읽기
+        const [balance] = await contractReadOnly.getStatus();
+        const balPOL = parseFloat(ethers.formatEther(balance)).toFixed(4);
+
+        sheetData.assets.content = `
+            <div class="sheet-row"><span>Owner wallet</span><strong>${fmt(ownerAddr)}</strong></div>
+            <div class="sheet-row"><span>Contract balance</span><strong style="color:#F5C842">${balPOL} POL</strong></div>
+            <div class="sheet-row"><span>Contract address</span><strong>${fmt(vaultAddr)}</strong></div>
+            <div class="sheet-row"><span>Network</span><strong>Polygon Amoy Testnet</strong></div>`;
+
+        sheetData.beneficiaries.content = `
+            <div class="sheet-row"><span>Heir wallet</span><strong style="font-size:.75rem;word-break:break-all">${heirAddr}</strong></div>
+            <div class="sheet-row"><span>Locked amount</span><strong style="color:#F5C842">${balPOL} POL</strong></div>`;
+
+        showTimer();
+        const statusBar = document.getElementById('status-bar');
+        statusBar.style.opacity = '1';
+        statusBar.style.visibility = 'visible';
+
+        const btn = document.getElementById('mm-btn');
+        const copy = document.getElementById('checkin-copy');
+
+        if (isOwner) {
+            btn.innerHTML = 'STARTING TIMER...';
+            btn.disabled = true;
+            try {
+                const tx = await contract.heartbeat();
+                await tx.wait();
+            } catch(e) {}
+            btn.innerHTML = `I'M STILL HERE`;
+            btn.onclick = confirmHeartbeat;
+            btn.disabled = false;
+            copy.textContent = 'Extend for another 60 seconds';
+        } else {
+            btn.innerHTML = `HEIR CONNECTED`;
+            btn.disabled = true;
+            copy.textContent = 'Waiting for heartbeat to expire...';
+        }
+
+        pollContractStatus();
+        pollInterval = setInterval(pollContractStatus, 2000);
+    }
+
     async function pollContractStatus() {
         if (!contractReadOnly) return;
         try {
             const [balance, timeLeft, isReleased, inGrace] = await contractReadOnly.getStatus();
-            const display = document.querySelector('#timer-display');
-            const stateLabel = document.querySelector('#timer-state');
-            const dateLabel = document.querySelector('#timer-date');
+            const display = document.getElementById('timer-display');
+            const stateLabel = document.getElementById('timer-state');
+            const dateLabel = document.getElementById('timer-date');
             const btn = document.getElementById('mm-btn');
             const copy = document.getElementById('checkin-copy');
             const secs = Number(timeLeft);
-            const bal = ethers.formatEther(balance);
+            const bal = parseFloat(ethers.formatEther(balance)).toFixed(4);
 
             document.body.classList.remove('state-warning', 'state-pending', 'state-released');
 
@@ -846,16 +442,15 @@
                 document.body.classList.add('state-pending');
                 stateLabel.textContent = 'HEARTBEAT EXPIRED';
                 display.textContent = 'TRANSFER PENDING';
-                dateLabel.textContent = 'Grace period active';
-                // heir면 release 버튼 보여주기
+                dateLabel.textContent = 'Grace period active — claim now';
                 const ownerAddr = await contractReadOnly.owner();
                 if (userAddress && userAddress.toLowerCase() !== ownerAddr.toLowerCase()) {
                     btn.textContent = 'RELEASE ASSETS';
                     btn.onclick = releaseAssets;
                     btn.disabled = false;
-                    copy.textContent = 'Grace period — claim inheritance';
+                    copy.textContent = 'Claim your inheritance';
                 }
-            } else if (secs <= 5) {
+            } else if (secs <= 10) {
                 document.body.classList.add('state-warning');
                 stateLabel.textContent = 'CHECK IN SOON';
                 display.textContent = `${secs} SEC LEFT`;
@@ -865,33 +460,25 @@
                 display.textContent = `${secs} SEC LEFT`;
                 dateLabel.textContent = `${bal} POL secured · Resets in ${secs}s`;
             }
-        } catch (e) {
-            console.error('poll error', e);
-        }
+        } catch(e) { console.error('poll error', e); }
     }
 
     async function confirmHeartbeat() {
-        if (!contract) return;
         const btn = document.getElementById('mm-btn');
-        const heartbeatEl = document.querySelector('.heartbeat');
         try {
             btn.textContent = 'CONFIRMING...';
             btn.disabled = true;
             const tx = await contract.heartbeat();
             await tx.wait();
-            heartbeatEl.classList.remove('confirmed');
-            void heartbeatEl.offsetWidth;
-            heartbeatEl.classList.add('confirmed');
             btn.textContent = 'HEARTBEAT CONFIRMED';
             document.getElementById('checkin-copy').textContent = 'Resets in 60s';
             setTimeout(() => {
                 btn.textContent = `I'M STILL HERE`;
                 btn.disabled = false;
                 document.getElementById('checkin-copy').textContent = 'Extend for another 60 seconds';
-                heartbeatEl.classList.remove('confirmed');
             }, 1800);
             pollContractStatus();
-        } catch (e) {
+        } catch(e) {
             btn.textContent = `I'M STILL HERE`;
             btn.disabled = false;
             if (e.code !== 4001) alert('트랜잭션 실패: ' + (e.shortMessage || e.message));
@@ -899,7 +486,6 @@
     }
 
     async function releaseAssets() {
-        if (!contract) return;
         const btn = document.getElementById('mm-btn');
         try {
             btn.textContent = 'RELEASING...';
@@ -907,121 +493,107 @@
             const tx = await contract.release();
             await tx.wait();
             pollContractStatus();
-        } catch (e) {
+        } catch(e) {
             btn.textContent = 'RELEASE ASSETS';
             btn.disabled = false;
             if (e.code !== 4001) alert('트랜잭션 실패: ' + (e.shortMessage || e.message));
         }
     }
 
-    function showTimer() {
-        document.querySelector('.timer-wrap').classList.add('visible');
+    async function createVault() {
+        const heir = document.getElementById('setup-heir').value.trim();
+        const amountStr = document.getElementById('setup-amount').value.trim();
+        const statusEl = document.getElementById('setup-status');
+        const btn = document.getElementById('setup-btn');
+
+        if (!heir.match(/^0x[0-9a-fA-F]{40}$/)) {
+            statusEl.style.color = '#ff5c5c';
+            statusEl.textContent = '올바른 수혜자 지갑 주소를 입력해주세요';
+            return;
+        }
+        if (!amountStr || parseFloat(amountStr) <= 0) {
+            statusEl.style.color = '#ff5c5c';
+            statusEl.textContent = '입금액을 입력해주세요';
+            return;
+        }
+
+        try {
+            btn.disabled = true;
+            statusEl.style.color = 'rgba(255,255,255,.5)';
+            statusEl.textContent = '볼트 생성 중... MetaMask를 확인해주세요';
+
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            const signer = await provider.getSigner();
+            const factory = new ethers.Contract(FACTORY_ADDRESS, FACTORY_ABI, signer);
+            const value = ethers.parseEther(amountStr);
+
+            const tx = await factory.createVault(heir, { value });
+            statusEl.textContent = '트랜잭션 확인 중...';
+            await tx.wait();
+
+            statusEl.style.color = '#F5C842';
+            statusEl.textContent = '✓ 볼트 생성 완료!';
+
+            setTimeout(async () => {
+                document.getElementById('setup-overlay').classList.remove('open');
+                const factoryRO = new ethers.Contract(FACTORY_ADDRESS, FACTORY_ABI, provider);
+                const vaultAddr = await factoryRO.getVault(userAddress);
+                await loadDashboard(vaultAddr, userAddress);
+            }, 1000);
+        } catch(e) {
+            btn.disabled = false;
+            statusEl.style.color = '#ff5c5c';
+            statusEl.textContent = e.code === 4001 ? '취소됨' : ('실패: ' + (e.shortMessage || e.message));
+        }
     }
 
     async function setConnectedState(addr) {
-        walletConnected = true;
         userAddress = addr;
         const btn = document.getElementById('mm-btn');
-        const copy = document.getElementById('checkin-copy');
+        btn.innerHTML = 'CHECKING...';
+        btn.disabled = true;
 
-        // ethers.js v6 provider + contract
         const provider = new ethers.BrowserProvider(window.ethereum);
-        const signerObj = await provider.getSigner();
-        contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signerObj);
-        contractReadOnly = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+        factoryReadOnly = new ethers.Contract(FACTORY_ADDRESS, FACTORY_ABI, provider);
 
-        // owner vs heir 확인
-        const ownerAddr = await contractReadOnly.owner();
-        const heirAddr = await contractReadOnly.heir();
-        const isOwner = addr.toLowerCase() === ownerAddr.toLowerCase();
+        const ZERO = '0x0000000000000000000000000000000000000000';
 
-        // 실제 주소 + 잔액으로 sheetData 업데이트
-        const fmt = a => `${a.slice(0,6)}...${a.slice(-4)}`;
-        const [balance] = await contractReadOnly.getStatus();
-        const balPOL = parseFloat(ethers.formatEther(balance)).toFixed(4);
-
-        sheetData.assets.content = `
-        <div class="sheet-row"><span>Owner wallet</span><strong>${fmt(ownerAddr)}</strong></div>
-        <div class="sheet-row"><span>Contract balance</span><strong style="color:#F5C842">${balPOL} POL</strong></div>
-        <div class="sheet-row"><span>Contract address</span><strong>${fmt(CONTRACT_ADDRESS)}</strong></div>
-        <div class="sheet-row"><span>Network</span><strong>Polygon Amoy Testnet</strong></div>`;
-
-        sheetData.beneficiaries.content = `
-        <div class="sheet-row"><span>Current heir</span><strong style="font-size:.75rem;word-break:break-all">${heirAddr}</strong></div>
-        <div class="sheet-row"><span>Locked amount</span><strong style="color:#F5C842">${balPOL} POL</strong></div>
-        <div style="padding:.9rem 0;border-bottom:1px solid rgba(255,255,255,.08)">
-            <div style="color:rgba(255,255,255,.5);font-size:.72rem;letter-spacing:.08em;margin-bottom:.6rem">CHANGE HEIR ADDRESS</div>
-            <input id="heir-input" type="text" placeholder="0x..." style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(245,200,66,.3);border-radius:.5rem;padding:.6rem .8rem;color:#fff;font-family:monospace;font-size:.78rem;outline:none;" />
-            <button onclick="updateHeir()" style="margin-top:.6rem;width:100%;padding:.65rem;border-radius:.5rem;border:none;background:#F5C842;color:#0a1a0e;font-weight:700;font-size:.85rem;cursor:pointer;">SET HEIR</button>
-            <div id="heir-status" style="margin-top:.5rem;font-size:.75rem;color:rgba(255,255,255,.5);text-align:center;"></div>
-        </div>`;
-
-        showTimer();
-        document.querySelector('.status-bar').style.cssText += 'opacity:1;visibility:visible;';
-        btn.classList.remove('connected');
-
-        if (isOwner) {
-            // 로그인 시 자동으로 heartbeat 호출 → 타이머 60초 리셋
-            btn.innerHTML = 'STARTING TIMER...';
-            btn.disabled = true;
-            copy.textContent = 'Resetting timer...';
-            try {
-                const tx = await contract.heartbeat();
-                btn.innerHTML = 'CONFIRMING...';
-                await tx.wait();
-            } catch(e) { /* 이미 최신이거나 유저가 취소한 경우 무시 */ }
-            btn.innerHTML = `I'M STILL HERE`;
-            btn.onclick = confirmHeartbeat;
-            btn.disabled = false;
-            copy.textContent = 'Extend for another 60 seconds';
-        } else {
-            btn.innerHTML = `HEIR CONNECTED`;
-            btn.disabled = true;
-            copy.textContent = 'Waiting for heartbeat to expire...';
+        // 오너 볼트 확인
+        const ownerVault = await factoryReadOnly.getVault(addr);
+        if (ownerVault !== ZERO) {
+            await loadDashboard(ownerVault, addr);
+            return;
         }
-        btn.setAttribute('aria-label', `Wallet ${addr.slice(0, 6)}...${addr.slice(-4)} connected`);
 
-        pollContractStatus();
-        pollInterval = setInterval(pollContractStatus, 2000);
+        // 수혜자 볼트 확인
+        const heirVault = await factoryReadOnly.getVaultByHeir(addr);
+        if (heirVault !== ZERO) {
+            await loadDashboard(heirVault, addr);
+            return;
+        }
+
+        // 새 유저 → 셋업 화면
+        showSetup();
     }
 
-    function setDisconnectedState() {
-        walletConnected = false;
-        clearInterval(pollInterval);
+    async function connectWallet() {
+        if (typeof window.ethereum === 'undefined') {
+            document.getElementById('demo-modal-backdrop').style.opacity = '1';
+            document.getElementById('demo-modal-backdrop').style.visibility = 'visible';
+            return;
+        }
         const btn = document.getElementById('mm-btn');
-        btn.innerHTML = connectButtonMarkup;
-        btn.onclick = connectWallet;
-        btn.disabled = false;
-        btn.removeAttribute('aria-label');
-        document.getElementById('checkin-copy').textContent = 'MetaMask connection required';
-    }
-
-    window.addEventListener('load', function () {
-        setupInteractiveHeartbeat();
-
-        document.querySelectorAll('[data-sheet]').forEach((button) => {
-            button.addEventListener('click', () => openSheet(button.dataset.sheet));
-        });
-
-        document.getElementById('sheet-close').addEventListener('click', closeSheet);
-        document.getElementById('bottom-sheet').addEventListener('click', (event) => {
-            if (event.target.id === 'bottom-sheet') closeSheet();
-        });
-
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape') closeSheet();
-        });
-
-        if (window.ethereum) {
-            window.ethereum.request({method: 'eth_accounts'}).then((accounts) => {
-                if (accounts[0]) setConnectedState(accounts[0]);
-            });
-            window.ethereum.on('accountsChanged', (accounts) => {
-                if (accounts[0]) setConnectedState(accounts[0]);
-                else setDisconnectedState();
-            });
+        btn.innerHTML = 'CONNECTING...';
+        btn.disabled = true;
+        try {
+            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+            await setConnectedState(accounts[0]);
+        } catch(err) {
+            btn.innerHTML = 'CONNECT TO BEGIN';
+            btn.disabled = false;
+            if (err.code === 4001) alert('연결을 취소했어요.');
         }
-    });
+    }
 
     function openSheet(type) {
         const sheet = document.getElementById('bottom-sheet');
@@ -1038,112 +610,136 @@
         sheet.setAttribute('aria-hidden', 'true');
     }
 
-    async function connectWallet() {
-        if (typeof window.ethereum !== 'undefined') {
-            const btn = document.getElementById('mm-btn');
-            btn.innerHTML = 'CONNECTING...';
-            btn.disabled = true;
-            try {
-                const accounts = await window.ethereum.request({method: 'eth_requestAccounts'});
-                await setConnectedState(accounts[0]);
-                btn.disabled = false;
-            } catch (err) {
-                setDisconnectedState();
-                if (err.code === 4001) alert('연결을 취소했어요.');
-            }
+    // ── WILL ─────────────────────────────────────────────
+    let willIsOwner = false;
+    let willVaultKey = '';
+
+    function willKey() {
+        return `lv_will_${currentVaultAddress || 'draft'}`;
+    }
+
+    function openWill() {
+        const overlay = document.getElementById('will-overlay');
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric' });
+
+        document.getElementById('will-meta').innerHTML =
+            `작성일: ${dateStr}<br>${userAddress ? fmt(userAddress) : ''}`;
+        document.getElementById('will-sig-addr').textContent =
+            userAddress ? userAddress : '지갑 연결 후 자동 서명';
+        document.getElementById('will-sig-date').textContent = dateStr;
+
+        // 저장된 내용 불러오기
+        const saved = localStorage.getItem(willKey());
+        if (saved) {
+            const data = JSON.parse(saved);
+            document.getElementById('will-assets').value = data.assets || '';
+            document.getElementById('will-message').value = data.message || '';
+            document.getElementById('will-wishes').value = data.wishes || '';
+
+            // 봉인 상태 표시
+            document.getElementById('will-sealed-banner').style.display = 'flex';
+            document.getElementById('will-status-msg').textContent = `마지막 저장: ${data.savedAt || ''}`;
         } else {
-            document.getElementById('demo-modal-backdrop').classList.add('open');
+            document.getElementById('will-sealed-banner').style.display = 'none';
+            document.getElementById('will-status-msg').textContent = '';
         }
-    }
 
-    async function updateHeir() {
-        const input = document.getElementById('heir-input');
-        const status = document.getElementById('heir-status');
-        const newHeir = input.value.trim();
-        if (!newHeir.match(/^0x[0-9a-fA-F]{40}$/)) {
-            status.style.color = '#ff5c5c';
-            status.textContent = '올바른 지갑 주소를 입력해주세요';
-            return;
+        // 오너가 아니면 읽기 전용
+        const isReleased = document.body.classList.contains('state-released');
+        if (!willIsOwner && !isReleased) {
+            ['will-assets','will-message','will-wishes'].forEach(id => {
+                const el = document.getElementById(id);
+                el.readOnly = true;
+                el.placeholder = '🔒  볼트 오너만 작성할 수 있어요';
+                el.value = el.value || '';
+            });
+            document.getElementById('will-actions').style.display = 'none';
+        } else {
+            ['will-assets','will-message','will-wishes'].forEach(id => {
+                document.getElementById(id).readOnly = false;
+            });
+            document.getElementById('will-actions').style.display = 'flex';
         }
-        try {
-            status.style.color = 'rgba(255,255,255,.5)';
-            status.textContent = '트랜잭션 요청 중...';
-            const tx = await contract.setHeir(newHeir);
-            status.textContent = '확인 중...';
-            await tx.wait();
-            status.style.color = '#F5C842';
-            status.textContent = '✓ 수혜자 주소 변경 완료!';
-            // sheetData 업데이트
-            const fmt = a => `${a.slice(0,6)}...${a.slice(-4)}`;
-            sheetData.beneficiaries.content = sheetData.beneficiaries.content.replace(
-                /Current heir<\/span><strong[^>]*>[^<]*<\/strong>/,
-                `Current heir</span><strong style="font-size:.75rem;word-break:break-all">${newHeir}</strong>`
-            );
-        } catch(e) {
-            status.style.color = '#ff5c5c';
-            status.textContent = e.code === 4001 ? '취소됨' : '실패: ' + (e.shortMessage || e.message);
+
+        overlay.classList.add('open');
+    }
+
+    function closeWill() {
+        document.getElementById('will-overlay').classList.remove('open');
+    }
+
+    function saveWill() {
+        const data = {
+            assets:  document.getElementById('will-assets').value,
+            message: document.getElementById('will-message').value,
+            wishes:  document.getElementById('will-wishes').value,
+            signer:  userAddress,
+            savedAt: new Date().toLocaleString('ko-KR')
+        };
+        localStorage.setItem(willKey(), JSON.stringify(data));
+
+        document.getElementById('will-sealed-banner').style.display = 'flex';
+        const msg = document.getElementById('will-status-msg');
+        msg.style.color = '#888';
+        msg.textContent = `✓ 저장됨 · ${data.savedAt}`;
+    }
+
+    function printWill() {
+        const w = window.open('', '_blank');
+        const assets  = document.getElementById('will-assets').value || '(미작성)';
+        const message = document.getElementById('will-message').value || '(미작성)';
+        const wishes  = document.getElementById('will-wishes').value || '(미작성)';
+        const addr    = userAddress || '';
+        const date    = new Date().toLocaleDateString('ko-KR', {year:'numeric',month:'long',day:'numeric'});
+        w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+        <title>유언장 — LegacyVault</title>
+        <style>
+            body{font-family:'Georgia',serif;max-width:640px;margin:3rem auto;padding:2rem;color:#222;line-height:1.8}
+            h1{font-size:1.8rem;border-bottom:2px solid #222;padding-bottom:.5rem;margin-bottom:2rem}
+            h2{font-size:.85rem;letter-spacing:.15em;color:#777;margin:2rem 0 .5rem;text-transform:uppercase}
+            p{white-space:pre-wrap;background:#f9f9f9;padding:1rem;border-radius:.4rem;font-size:.95rem}
+            .sig{margin-top:3rem;border-top:1px solid #ccc;padding-top:1rem;display:flex;justify-content:space-between;font-size:.8rem;color:#666}
+            .watermark{text-align:center;color:#ccc;font-size:.7rem;margin-top:3rem}
+        </style></head><body>
+        <h1>📜 나의 유언장</h1>
+        <h2>01 · 재산 분배 의향</h2><p>${assets}</p>
+        <h2>02 · 수혜자에게 전하는 말</h2><p>${message}</p>
+        <h2>03 · 마지막 바람</h2><p>${wishes}</p>
+        <div class="sig"><span>서명: ${addr}</span><span>${date}</span></div>
+        <div class="watermark">LegacyVault · Secured by Blockchain</div>
+        </body></html>`);
+        w.document.close();
+        w.print();
+    }
+    // ────────────────────────────────────────────────────
+
+    window.addEventListener('load', () => {
+        setupInteractiveHeartbeat();
+        document.querySelectorAll('[data-sheet]').forEach(btn => {
+            btn.addEventListener('click', () => openSheet(btn.dataset.sheet));
+        });
+        document.getElementById('sheet-close').addEventListener('click', closeSheet);
+        document.getElementById('bottom-sheet').addEventListener('click', e => {
+            if (e.target.id === 'bottom-sheet') closeSheet();
+        });
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') { closeSheet(); closeWill(); }
+        });
+        document.getElementById('will-overlay').addEventListener('click', e => {
+            if (e.target.id === 'will-overlay') closeWill();
+        });
+
+        if (window.ethereum) {
+            window.ethereum.request({ method: 'eth_accounts' }).then(accounts => {
+                if (accounts[0]) setConnectedState(accounts[0]);
+            });
+            window.ethereum.on('accountsChanged', accounts => {
+                if (accounts[0]) setConnectedState(accounts[0]);
+                else location.reload();
+            });
         }
-    }
-
-    function closeDemoModal() {
-        document.getElementById('demo-modal-backdrop').classList.remove('open');
-    }
-
-    function demoConnect() {
-        closeDemoModal();
-        setConnectedState('0x71C3b8a2F4e1d9c0A7B5E2D3F6C8A9C2E1B4D7F0');
-    }
-</script>
-
-<!-- Demo MetaMask Modal -->
-<div id="demo-modal-backdrop" style="position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s">
-    <div style="width:22rem;background:#1b1f2e;border-radius:1.25rem;padding:1.75rem 1.5rem 1.5rem;box-shadow:0 1.5rem 4rem rgba(0,0,0,.6);text-align:center">
-        <svg viewBox="0 0 35 33" style="width:3.5rem;height:3.5rem;margin:0 auto 1rem;display:block">
-            <path d="M32.9 1L20.2 10.3l2.3-5.5L32.9 1z" fill="#E17726"/>
-            <path d="M2.1 1l12.6 9.4-2.2-5.6L2.1 1z" fill="#E27625"/>
-            <path d="M28.2 23.6l-3.4 5.2 7.3 2 2.1-7.1-6-.1z" fill="#E27625"/>
-            <path d="M.8 23.7l2 7.1 7.3-2-3.4-5.2-5.9.1z" fill="#E27625"/>
-            <path d="M9.7 15l-2 3 7.1.3-.2-7.7-4.9 4.4z" fill="#E27625"/>
-            <path d="M25.3 15l-5-4.5-.2 7.8 7.1-.3-1.9-3z" fill="#E27625"/>
-            <path d="M10.1 28.8l4.3-2.1-3.7-2.9-.6 5z" fill="#E27625"/>
-            <path d="M20.6 26.7l4.3 2.1-.6-5-3.7 2.9z" fill="#E27625"/>
-        </svg>
-        <div style="font-family:Arial,sans-serif;font-weight:700;font-size:1rem;color:#fff;margin-bottom:.4rem">연결 요청</div>
-        <div style="font-family:monospace;font-size:.78rem;color:rgba(255,255,255,.45);margin-bottom:1.2rem">0x71C3...A9C2</div>
-        <div style="background:rgba(255,255,255,.06);border-radius:.75rem;padding:.7rem 1rem;margin-bottom:1.4rem;display:flex;align-items:center;gap:.6rem">
-            <span style="width:.5rem;height:.5rem;border-radius:50%;background:#4ade80;flex-shrink:0;display:inline-block"></span>
-            <span style="font-family:Arial,sans-serif;font-size:.8rem;color:rgba(255,255,255,.7)">localhost:3000 이 지갑 연결을 요청합니다</span>
-        </div>
-        <div style="display:flex;gap:.75rem">
-            <button onclick="closeDemoModal()" style="flex:1;padding:.7rem;border-radius:.75rem;border:1px solid rgba(255,255,255,.18);background:transparent;color:rgba(255,255,255,.7);font-family:Arial,sans-serif;font-size:.88rem;font-weight:600;cursor:pointer">취소</button>
-            <button onclick="demoConnect()" style="flex:1;padding:.7rem;border-radius:.75rem;border:none;background:#f6851b;color:#fff;font-family:Arial,sans-serif;font-size:.88rem;font-weight:700;cursor:pointer">연결</button>
-        </div>
-    </div>
-</div>
-
-<script>
-    document.getElementById('demo-modal-backdrop').addEventListener('click', function(e) {
-        if (e.target === this) closeDemoModal();
     });
-    // CSS transition helper
-    const _backdrop = document.getElementById('demo-modal-backdrop');
-    const _origOpen = closeDemoModal;
-    window._modalOpen = function() {
-        _backdrop.style.opacity = '0'; _backdrop.style.visibility = 'hidden';
-    };
-    document.querySelector('#demo-modal-backdrop').style.cssText += '';
-    // Override classList for inline style modal
-    const origAdd = DOMTokenList.prototype.add;
-    const origRemove = DOMTokenList.prototype.remove;
-    document.getElementById('demo-modal-backdrop').classList.add = function(cls) {
-        if (cls === 'open') { this._el = this._el || document.getElementById('demo-modal-backdrop'); document.getElementById('demo-modal-backdrop').style.opacity='1'; document.getElementById('demo-modal-backdrop').style.visibility='visible'; }
-        origAdd.call(this, cls);
-    };
-    document.getElementById('demo-modal-backdrop').classList.remove = function(cls) {
-        if (cls === 'open') { document.getElementById('demo-modal-backdrop').style.opacity='0'; document.getElementById('demo-modal-backdrop').style.visibility='hidden'; }
-        origRemove.call(this, cls);
-    };
 </script>
-
 </body>
 </html>
