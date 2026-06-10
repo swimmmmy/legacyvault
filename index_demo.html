@@ -663,8 +663,12 @@ async function setConnectedState(addr) {
     const fmt         = a => `${a.slice(0,6)}...${a.slice(-4)}`;
     const [balance]   = await contractReadOnly.getStatus();
     const balPOL      = parseFloat(ethers.formatEther(balance)).toFixed(4);
+    const walletBal   = await provider.getBalance(addr);
+    const walletPOL   = parseFloat(ethers.formatEther(walletBal)).toFixed(4);
 
     sheetData.assets.content = `
+        <div class="sheet-row"><span>My wallet</span><strong>${fmt(addr)}</strong></div>
+        <div class="sheet-row"><span>Wallet balance</span><strong style="color:#F5C842">${walletPOL} POL</strong></div>
         <div class="sheet-row"><span>Network</span><strong>Polygon Amoy Testnet</strong></div>`;
 
     sheetData.beneficiaries = {
