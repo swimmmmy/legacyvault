@@ -83,17 +83,22 @@
         .will-save-btn:hover { background: rgba(245,200,66,.28); }
         .will-status { margin-top: .5rem; font-size: .75rem; color: rgba(255,255,255,.4); text-align: center; font-family: Arial, sans-serif; }
 
-        /* Heir rows for multi-beneficiary */
-        .heir-rows { display: flex; flex-direction: column; gap: .5rem; margin-bottom: .5rem; }
-        .heir-row { display: flex; gap: .5rem; align-items: center; }
-        .heir-row input[type="text"] { flex: 1; background: rgba(255,255,255,.05); border: 1px solid rgba(245,200,66,.2); border-radius: .4rem; padding: .5rem .6rem; color: #fff; font-family: monospace; font-size: .75rem; outline: none; min-width: 0; }
-        .heir-row input[type="number"] { width: 3.5rem; background: rgba(255,255,255,.05); border: 1px solid rgba(245,200,66,.2); border-radius: .4rem; padding: .5rem .4rem; color: #F5C842; font-family: Arial, sans-serif; font-size: .8rem; font-weight: 700; text-align: center; outline: none; }
-        .heir-row .pct-label { color: rgba(255,255,255,.4); font-size: .75rem; font-family: Arial, sans-serif; }
-        .heir-row .remove-heir { width: 1.5rem; height: 1.5rem; border: 1px solid rgba(255,255,255,.2); border-radius: 50%; background: transparent; color: rgba(255,255,255,.4); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: .8rem; flex-shrink: 0; }
-        .heir-row .remove-heir:hover { color: #ff5c5c; border-color: #ff5c5c; }
+        /* Heir cards for multi-beneficiary */
+        .heir-rows { display: flex; flex-direction: column; gap: .6rem; margin-bottom: .5rem; }
+        .heir-card { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-radius: .55rem; padding: .65rem .75rem; display: flex; flex-direction: column; gap: .45rem; }
+        .heir-card-row1 { display: flex; gap: .45rem; align-items: center; }
+        .heir-card-row2 { display: flex; gap: .45rem; align-items: center; }
+        .heir-card input[type="text"], .heir-card input[type="number"] { background: rgba(255,255,255,.05); border: 1px solid rgba(245,200,66,.18); border-radius: .35rem; padding: .4rem .55rem; color: #fff; font-size: .78rem; outline: none; min-width: 0; }
+        .heir-card input[type="text"]:focus, .heir-card input[type="number"]:focus { border-color: rgba(245,200,66,.45); }
+        .heir-card select { background: rgba(255,255,255,.05); border: 1px solid rgba(245,200,66,.18); border-radius: .35rem; padding: .4rem .5rem; color: rgba(255,255,255,.8); font-family: Arial, sans-serif; font-size: .75rem; outline: none; cursor: pointer; }
+        .heir-card select option { background: #1a2e1e; }
+        .heir-pct-input { width: 3.2rem !important; text-align: center; color: #F5C842 !important; font-weight: 700; }
+        .pct-unit { color: rgba(255,255,255,.35); font-size: .72rem; font-family: Arial, sans-serif; flex-shrink: 0; }
+        .remove-heir { width: 1.4rem; height: 1.4rem; border: 1px solid rgba(255,255,255,.18); border-radius: 50%; background: transparent; color: rgba(255,255,255,.35); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: .8rem; flex-shrink: 0; line-height: 1; }
+        .remove-heir:hover { color: #ff5c5c; border-color: #ff5c5c; }
         .add-heir-btn { font-size: .75rem; color: rgba(245,200,66,.6); background: transparent; border: 1px dashed rgba(245,200,66,.3); border-radius: .4rem; padding: .35rem .7rem; cursor: pointer; font-family: Arial, sans-serif; transition: all .2s; }
         .add-heir-btn:hover { color: #F5C842; border-color: rgba(245,200,66,.6); }
-        .pct-total { font-size: .72rem; font-family: Arial, sans-serif; color: rgba(255,255,255,.4); text-align: right; margin-top: .3rem; }
+        .pct-total { font-size: .72rem; font-family: Arial, sans-serif; color: rgba(255,255,255,.4); text-align: right; margin-top: .25rem; }
         .pct-total.warn { color: #ff9f43; }
         .pct-total.ok { color: #5fc87a; }
 
@@ -244,7 +249,8 @@ function saveWill(data) { localStorage.setItem(WILL_KEY, JSON.stringify(data)); 
 
 /* ── Heirs helpers (multi %) ───────────────────── */
 function loadHeirs() {
-    try { return JSON.parse(localStorage.getItem(HEIRS_KEY)) || [{ name: '', pct: 100 }]; } catch { return [{ name: '', pct: 100 }]; }
+    try { return JSON.parse(localStorage.getItem(HEIRS_KEY)) || [{ name: '', wallet: '', pct: 100, timing: 'immediately', timingVal: '', timingCustom: '' }]; }
+    catch { return [{ name: '', wallet: '', pct: 100, timing: 'immediately', timingVal: '', timingCustom: '' }]; }
 }
 function saveHeirs(heirs) { localStorage.setItem(HEIRS_KEY, JSON.stringify(heirs)); }
 
@@ -275,43 +281,66 @@ const sheetData = {
     }
 };
 
+/* ── Build a single heir card ──────────────────── */
+function buildHeirCard(h, i) {
+    const t = h.timing || 'immediately';
+    const opts = [
+        ['immediately', 'Immediately'],
+        ['years',       'After N years'],
+        ['age',         'When age N'],
+        ['custom',      'Custom condition']
+    ].map(([v, l]) => `<option value="${v}"${t===v?' selected':''}>${l}</option>`).join('');
+    const showN      = t === 'years' || t === 'age';
+    const showCustom = t === 'custom';
+    const nLabel     = t === 'years' ? 'yrs' : 'age';
+    return `<div class="heir-card" id="heir-row-${i}">
+        <div class="heir-card-row1">
+            <input type="text" placeholder="Name" value="${h.name||''}"
+                oninput="updateHeirField(${i},'name',this.value)" style="flex:1">
+            <input type="text" placeholder="0x wallet address" value="${h.wallet||''}"
+                oninput="updateHeirField(${i},'wallet',this.value)" style="flex:2;font-family:monospace;font-size:.7rem">
+            <input type="number" class="heir-pct-input" min="0" max="100" value="${h.pct??''}" placeholder="%"
+                oninput="updateHeirField(${i},'pct',+this.value)">
+            <span class="pct-unit">%</span>
+            <button class="remove-heir" onclick="removeHeirRow(${i})">×</button>
+        </div>
+        <div class="heir-card-row2">
+            <span style="color:rgba(255,255,255,.4);font-size:.72rem;font-family:Arial;flex-shrink:0">Transfer</span>
+            <select onchange="updateHeirTiming(${i},this.value)">${opts}</select>
+            ${showN ? `<input type="number" min="0" placeholder="${nLabel}" value="${h.timingVal||''}"
+                oninput="updateHeirField(${i},'timingVal',+this.value)"
+                style="width:4rem">` : ''}
+            ${showCustom ? `<input type="text" placeholder="e.g. when she turns 25" value="${h.timingCustom||''}"
+                oninput="updateHeirField(${i},'timingCustom',this.value)"
+                style="flex:1">` : ''}
+        </div>
+    </div>`;
+}
+
 /* ── Build beneficiaries sheet HTML ────────────── */
 function buildBeneficiariesContent(heirAddr, balPOL) {
     const will  = loadWill();
     const heirs = loadHeirs();
-
-    const heirRowsHTML = heirs.map((h, i) => `
-        <div class="heir-row" id="heir-row-${i}">
-            <input type="text" placeholder="이름 또는 관계 (예: 큰딸)" value="${h.name || ''}"
-                oninput="updateHeirField(${i},'name',this.value)" style="font-family:Arial,sans-serif;">
-            <input type="number" min="0" max="100" value="${h.pct ?? ''}"
-                oninput="updateHeirField(${i},'pct',+this.value)" placeholder="%" >
-            <span class="pct-label">%</span>
-            <button class="remove-heir" onclick="removeHeirRow(${i})" title="삭제">×</button>
-        </div>`).join('');
-
+    const heirRowsHTML = heirs.map((h, i) => buildHeirCard(h, i)).join('');
     const total = heirs.reduce((s, h) => s + (Number(h.pct) || 0), 0);
     const totalColor = total === 100 ? 'ok' : 'warn';
-    const totalText  = total === 100 ? '✓ 합계 100%' : `합계 ${total}% (100%가 되어야 해요)`;
+    const totalText  = total === 100 ? '✓ Total 100%' : `Total ${total}% — must equal 100`;
 
     return `
-    <div class="sheet-row"><span>Current heir</span><strong style="font-size:.75rem;word-break:break-all">${heirAddr}</strong></div>
+    <div class="sheet-row"><span>Current heir (on-chain)</span><strong style="font-size:.72rem;word-break:break-all">${heirAddr}</strong></div>
     <div class="sheet-row"><span>Locked amount</span><strong style="color:#F5C842">${balPOL} POL</strong></div>
 
-    <div class="section-label" style="margin-top:1.4rem">📜 유언장</div>
+    <div class="section-label" style="margin-top:1.4rem">Last Will &amp; Testament</div>
 
-    <div class="section-label" style="margin-top:.8rem">재산 분배 의향</div>
+    <div class="section-label" style="margin-top:.8rem">Asset Distribution</div>
     <div class="heir-rows" id="heir-rows">${heirRowsHTML}</div>
-    <button class="add-heir-btn" onclick="addHeirRow()">+ 수혜자 추가</button>
+    <button class="add-heir-btn" onclick="addHeirRow()">+ Add Beneficiary</button>
     <div class="pct-total ${totalColor}" id="pct-total">${totalText}</div>
 
-    <div class="section-label">수혜자에게 전하는 말</div>
-    <textarea class="will-textarea" id="will-msg" placeholder="소중한 사람에게 남기는 한 마디...">${will.msg || ''}</textarea>
+    <div class="section-label" style="margin-top:1rem">Message to Beneficiaries</div>
+    <textarea class="will-textarea" id="will-msg">${will.msg || ''}</textarea>
 
-    <div class="section-label">마지막 바람</div>
-    <textarea class="will-textarea" id="will-wish" placeholder="내가 가고 난 후 바라는 것들...">${will.wish || ''}</textarea>
-
-    <button class="will-save-btn" onclick="saveWillData()">저장하기</button>
+    <button class="will-save-btn" onclick="saveWillData()">Save</button>
     <div class="will-status" id="will-status"></div>`;
 }
 
@@ -321,96 +350,78 @@ function buildLettersContent() {
     const listHTML = letters.length ? letters.map((l, i) => `
         <div class="letter-card">
             <div class="letter-card-header">
-                <span class="letter-card-to">To. ${l.to || '(이름 없음)'}</span>
-                <span class="letter-card-date">${l.date ? '📅 ' + l.date : '날짜 미정'}</span>
+                <span class="letter-card-to">To. ${l.to || '—'}</span>
+                <span class="letter-card-date">${l.date ? '📅 ' + l.date : 'No date set'}</span>
             </div>
-            <div class="letter-card-preview">${l.body || '(내용 없음)'}</div>
+            <div class="letter-card-preview">${l.body || ''}</div>
             <div class="letter-card-actions">
-                <button class="letter-action-btn" onclick="editLetter(${i})">수정</button>
-                <button class="letter-action-btn del" onclick="deleteLetter(${i})">삭제</button>
+                <button class="letter-action-btn" onclick="editLetter(${i})">Edit</button>
+                <button class="letter-action-btn del" onclick="deleteLetter(${i})">Delete</button>
             </div>
-        </div>`).join('') : `<p style="color:rgba(255,255,255,.3);font-size:.85rem;text-align:center;padding:1.2rem 0">아직 작성된 편지가 없어요</p>`;
+        </div>`).join('') : `<p style="color:rgba(255,255,255,.3);font-size:.85rem;text-align:center;padding:1.2rem 0">No letters yet.</p>`;
 
     return `
-    <p style="color:rgba(255,255,255,.45);font-size:.8rem;margin-bottom:1rem;line-height:1.6">내가 떠난 뒤 특정 날짜에 소중한 사람에게 전달될 편지를 남겨두세요.</p>
+    <p style="color:rgba(255,255,255,.4);font-size:.8rem;margin-bottom:1rem;line-height:1.6">Messages to be delivered to specific people on a chosen date after you're gone.</p>
     <div class="letter-list">${listHTML}</div>
 
-    <div class="section-label">새 편지 쓰기</div>
+    <div class="section-label">New Letter</div>
     <div class="new-letter-form">
         <div class="form-row">
-            <input type="text" id="letter-to" placeholder="받는 사람 (예: 엄마, 딸에게)" style="flex:1.2">
+            <input type="text" id="letter-to" placeholder="To (name or relationship)" style="flex:1.2">
             <input type="date" id="letter-date" style="flex:1;color-scheme:dark">
         </div>
-        <textarea class="will-textarea" id="letter-body" placeholder="마음속 말들을 자유롭게 써주세요..." style="min-height:6rem"></textarea>
-        <button class="will-save-btn" onclick="saveLetter()">편지 저장</button>
+        <textarea class="will-textarea" id="letter-body" style="min-height:6rem"></textarea>
+        <button class="will-save-btn" onclick="saveLetter()">Save Letter</button>
         <div class="will-status" id="letter-status"></div>
     </div>`;
 }
 
 /* ── Heir row mutations ────────────────────────── */
-window.updateHeirField = function(i, field, val) {
+function refreshPctTotal() {
     const heirs = loadHeirs();
-    heirs[i][field] = val;
-    saveHeirs(heirs);
-    // update total display only
     const total = heirs.reduce((s, h) => s + (Number(h.pct) || 0), 0);
     const el = document.getElementById('pct-total');
-    if (el) {
-        el.className = 'pct-total ' + (total === 100 ? 'ok' : 'warn');
-        el.textContent = total === 100 ? '✓ 합계 100%' : `합계 ${total}% (100%가 되어야 해요)`;
-    }
+    if (el) { el.className = 'pct-total ' + (total === 100 ? 'ok' : 'warn'); el.textContent = total === 100 ? '✓ Total 100%' : `Total ${total}% — must equal 100`; }
+}
+
+window.updateHeirField = function(i, field, val) {
+    const heirs = loadHeirs(); heirs[i][field] = val; saveHeirs(heirs); refreshPctTotal();
+};
+
+window.updateHeirTiming = function(i, val) {
+    const heirs = loadHeirs(); heirs[i].timing = val; saveHeirs(heirs);
+    // re-render just that card
+    const card = document.getElementById(`heir-row-${i}`);
+    if (card) { const tmp = document.createElement('div'); tmp.innerHTML = buildHeirCard(heirs[i], i); card.replaceWith(tmp.firstChild); }
 };
 
 window.addHeirRow = function() {
     const heirs = loadHeirs();
-    heirs.push({ name: '', pct: 0 });
+    heirs.push({ name: '', wallet: '', pct: 0, timing: 'immediately', timingVal: '', timingCustom: '' });
     saveHeirs(heirs);
     const container = document.getElementById('heir-rows');
     if (!container) return;
     const i = heirs.length - 1;
-    const div = document.createElement('div');
-    div.className = 'heir-row';
-    div.id = `heir-row-${i}`;
-    div.innerHTML = `
-        <input type="text" placeholder="이름 또는 관계" value=""
-            oninput="updateHeirField(${i},'name',this.value)" style="font-family:Arial,sans-serif;">
-        <input type="number" min="0" max="100" value="0"
-            oninput="updateHeirField(${i},'pct',+this.value)" placeholder="%">
-        <span class="pct-label">%</span>
-        <button class="remove-heir" onclick="removeHeirRow(${i})" title="삭제">×</button>`;
-    container.appendChild(div);
+    const tmp = document.createElement('div'); tmp.innerHTML = buildHeirCard(heirs[i], i);
+    container.appendChild(tmp.firstChild);
+    refreshPctTotal();
 };
 
 window.removeHeirRow = function(i) {
     const heirs = loadHeirs();
     if (heirs.length <= 1) return;
-    heirs.splice(i, 1);
-    saveHeirs(heirs);
-    // re-render beneficiaries panel
-    const sc = document.getElementById('sheet-content');
-    if (sc && document.getElementById('heir-rows')) {
-        // partial re-render of heir section
-        const container = document.getElementById('heir-rows');
-        container.innerHTML = heirs.map((h, idx) => `
-            <div class="heir-row" id="heir-row-${idx}">
-                <input type="text" placeholder="이름 또는 관계" value="${h.name || ''}"
-                    oninput="updateHeirField(${idx},'name',this.value)" style="font-family:Arial,sans-serif;">
-                <input type="number" min="0" max="100" value="${h.pct ?? ''}"
-                    oninput="updateHeirField(${idx},'pct',+this.value)" placeholder="%">
-                <span class="pct-label">%</span>
-                <button class="remove-heir" onclick="removeHeirRow(${idx})" title="삭제">×</button>
-            </div>`).join('');
-        updateHeirField(0, 'name', heirs[0].name); // trigger total recalc
-    }
+    heirs.splice(i, 1); saveHeirs(heirs);
+    const container = document.getElementById('heir-rows');
+    if (container) { container.innerHTML = heirs.map((h, idx) => buildHeirCard(h, idx)).join(''); }
+    refreshPctTotal();
 };
 
 /* ── Will save ─────────────────────────────────── */
 window.saveWillData = function() {
-    const msg  = document.getElementById('will-msg')?.value  || '';
-    const wish = document.getElementById('will-wish')?.value || '';
-    saveWill({ msg, wish, savedAt: new Date().toISOString() });
+    const msg = document.getElementById('will-msg')?.value || '';
+    saveWill({ msg, savedAt: new Date().toISOString() });
     const el = document.getElementById('will-status');
-    if (el) { el.textContent = '✓ 저장됐어요'; el.style.color = '#F5C842'; setTimeout(() => { el.textContent = ''; }, 2000); }
+    if (el) { el.textContent = '✓ Saved'; el.style.color = '#F5C842'; setTimeout(() => { el.textContent = ''; }, 2000); }
 };
 
 /* ── Letter save/edit/delete ───────────────────── */
@@ -418,7 +429,7 @@ window.saveLetter = function() {
     const to   = document.getElementById('letter-to')?.value.trim()   || '';
     const date = document.getElementById('letter-date')?.value         || '';
     const body = document.getElementById('letter-body')?.value.trim()  || '';
-    if (!body) { const s = document.getElementById('letter-status'); if (s) { s.textContent = '내용을 입력해주세요'; s.style.color='#ff5c5c'; } return; }
+    if (!body) { const s = document.getElementById('letter-status'); if (s) { s.textContent = 'Write something first.'; s.style.color='#ff5c5c'; } return; }
     const letters = loadLetters();
     const editIdx = window._editingLetterIdx;
     if (editIdx !== undefined) {
@@ -430,7 +441,7 @@ window.saveLetter = function() {
     saveLetters(letters);
     document.getElementById('sheet-content').innerHTML = buildLettersContent();
     const s = document.getElementById('letter-status');
-    if (s) { s.textContent = '✓ 편지가 저장됐어요'; s.style.color='#F5C842'; }
+    if (s) { s.textContent = '✓ Saved'; s.style.color='#F5C842'; }
 };
 
 window.editLetter = function(i) {
