@@ -727,7 +727,7 @@
 
 <script>
     // ── 컨트랙트 설정 ──
-    const CONTRACT_ADDRESS = '0x82183F109553BF6ce76705467D6efE65b823b49d';
+    const CONTRACT_ADDRESS = '0xBDB98082fC0C1ba918FD7460ECf96BF46A3abEAe';
     const CONTRACT_ABI = [
         {"inputs":[{"internalType":"address payable","name":"_heir","type":"address"}],"stateMutability":"payable","type":"constructor"},
         {"inputs":[],"name":"heartbeat","outputs":[],"stateMutability":"nonpayable","type":"function"},
@@ -735,6 +735,7 @@
         {"inputs":[],"name":"getStatus","outputs":[{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"timeLeft","type":"uint256"},{"internalType":"bool","name":"isReleased","type":"bool"},{"internalType":"bool","name":"inGrace","type":"bool"}],"stateMutability":"view","type":"function"},
         {"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
         {"inputs":[],"name":"heir","outputs":[{"internalType":"address payable","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+        {"inputs":[{"internalType":"address payable","name":"_newHeir","type":"address"}],"name":"setHeir","outputs":[],"stateMutability":"nonpayable","type":"function"},
         {"stateMutability":"payable","type":"receive"}
     ];
 
@@ -748,22 +749,17 @@
     const sheetData = {
         assets: {
             title: 'Your Assets',
-            content: `
-        <div class="sheet-row"><span>Ethereum</span><strong>1.42 ETH</strong></div>
-        <div class="sheet-row"><span>USDC</span><strong>8,250 USDC</strong></div>
-        <div class="sheet-row"><span>NFT collection</span><strong>4 items</strong></div>`
+            content: ``
         },
         beneficiaries: {
             title: 'Beneficiaries',
-            content: `
-        <div class="sheet-row"><span>Primary wallet</span><strong>0x71...A9C2 · 70%</strong></div>
-        <div class="sheet-row"><span>Secondary wallet</span><strong>0x2B...88F1 · 30%</strong></div>`
+            content: ``
         },
         protection: {
             title: 'Protection Status',
             content: `
-        <div class="sheet-row"><span>Heartbeat window</span><strong>30 seconds</strong></div>
-        <div class="sheet-row"><span>Grace period</span><strong>7 seconds</strong></div>
+        <div class="sheet-row"><span>Heartbeat window</span><strong>60 seconds</strong></div>
+        <div class="sheet-row"><span>Grace period</span><strong>10 seconds</strong></div>
         <div class="sheet-row"><span>Transfer status</span><strong id="sheet-transfer-state">Not scheduled</strong></div>`
         }
 ,
@@ -887,11 +883,11 @@
             void heartbeatEl.offsetWidth;
             heartbeatEl.classList.add('confirmed');
             btn.textContent = 'HEARTBEAT CONFIRMED';
-            document.getElementById('checkin-copy').textContent = 'Resets in 30s';
+            document.getElementById('checkin-copy').textContent = 'Resets in 60s';
             setTimeout(() => {
                 btn.textContent = `I'M STILL HERE`;
                 btn.disabled = false;
-                document.getElementById('checkin-copy').textContent = 'Extend for another 30 seconds';
+                document.getElementById('checkin-copy').textContent = 'Extend for another 60 seconds';
                 heartbeatEl.classList.remove('confirmed');
             }, 1800);
             pollContractStatus();
@@ -939,15 +935,26 @@
         const heirAddr = await contractReadOnly.heir();
         const isOwner = addr.toLowerCase() === ownerAddr.toLowerCase();
 
-        // 실제 주소로 sheetData 업데이트
+        // 실제 주소 + 잔액으로 sheetData 업데이트
         const fmt = a => `${a.slice(0,6)}...${a.slice(-4)}`;
+        const [balance] = await contractReadOnly.getStatus();
+        const balPOL = parseFloat(ethers.formatEther(balance)).toFixed(4);
+
         sheetData.assets.content = `
         <div class="sheet-row"><span>Owner wallet</span><strong>${fmt(ownerAddr)}</strong></div>
-        <div class="sheet-row"><span>Contract (Amoy)</span><strong>${fmt(CONTRACT_ADDRESS)}</strong></div>
+        <div class="sheet-row"><span>Contract balance</span><strong style="color:#F5C842">${balPOL} POL</strong></div>
+        <div class="sheet-row"><span>Contract address</span><strong>${fmt(CONTRACT_ADDRESS)}</strong></div>
         <div class="sheet-row"><span>Network</span><strong>Polygon Amoy Testnet</strong></div>`;
+
         sheetData.beneficiaries.content = `
-        <div class="sheet-row"><span>Heir wallet</span><strong>${fmt(heirAddr)}</strong></div>
-        <div class="sheet-row"><span>Full address</span><strong style="font-size:.7rem;word-break:break-all">${heirAddr}</strong></div>`;
+        <div class="sheet-row"><span>Current heir</span><strong style="font-size:.75rem;word-break:break-all">${heirAddr}</strong></div>
+        <div class="sheet-row"><span>Locked amount</span><strong style="color:#F5C842">${balPOL} POL</strong></div>
+        <div style="padding:.9rem 0;border-bottom:1px solid rgba(255,255,255,.08)">
+            <div style="color:rgba(255,255,255,.5);font-size:.72rem;letter-spacing:.08em;margin-bottom:.6rem">CHANGE HEIR ADDRESS</div>
+            <input id="heir-input" type="text" placeholder="0x..." style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(245,200,66,.3);border-radius:.5rem;padding:.6rem .8rem;color:#fff;font-family:monospace;font-size:.78rem;outline:none;" />
+            <button onclick="updateHeir()" style="margin-top:.6rem;width:100%;padding:.65rem;border-radius:.5rem;border:none;background:#F5C842;color:#0a1a0e;font-weight:700;font-size:.85rem;cursor:pointer;">SET HEIR</button>
+            <div id="heir-status" style="margin-top:.5rem;font-size:.75rem;color:rgba(255,255,255,.5);text-align:center;"></div>
+        </div>`;
 
         showTimer();
         document.querySelector('.status-bar').style.cssText += 'opacity:1;visibility:visible;';
@@ -966,7 +973,7 @@
             btn.innerHTML = `I'M STILL HERE`;
             btn.onclick = confirmHeartbeat;
             btn.disabled = false;
-            copy.textContent = 'Extend for another 30 seconds';
+            copy.textContent = 'Extend for another 60 seconds';
         } else {
             btn.innerHTML = `HEIR CONNECTED`;
             btn.disabled = true;
@@ -1046,6 +1053,35 @@
             }
         } else {
             document.getElementById('demo-modal-backdrop').classList.add('open');
+        }
+    }
+
+    async function updateHeir() {
+        const input = document.getElementById('heir-input');
+        const status = document.getElementById('heir-status');
+        const newHeir = input.value.trim();
+        if (!newHeir.match(/^0x[0-9a-fA-F]{40}$/)) {
+            status.style.color = '#ff5c5c';
+            status.textContent = '올바른 지갑 주소를 입력해주세요';
+            return;
+        }
+        try {
+            status.style.color = 'rgba(255,255,255,.5)';
+            status.textContent = '트랜잭션 요청 중...';
+            const tx = await contract.setHeir(newHeir);
+            status.textContent = '확인 중...';
+            await tx.wait();
+            status.style.color = '#F5C842';
+            status.textContent = '✓ 수혜자 주소 변경 완료!';
+            // sheetData 업데이트
+            const fmt = a => `${a.slice(0,6)}...${a.slice(-4)}`;
+            sheetData.beneficiaries.content = sheetData.beneficiaries.content.replace(
+                /Current heir<\/span><strong[^>]*>[^<]*<\/strong>/,
+                `Current heir</span><strong style="font-size:.75rem;word-break:break-all">${newHeir}</strong>`
+            );
+        } catch(e) {
+            status.style.color = '#ff5c5c';
+            status.textContent = e.code === 4001 ? '취소됨' : '실패: ' + (e.shortMessage || e.message);
         }
     }
 
