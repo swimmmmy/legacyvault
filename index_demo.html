@@ -936,7 +936,18 @@
 
         // owner vs heir 확인
         const ownerAddr = await contractReadOnly.owner();
+        const heirAddr = await contractReadOnly.heir();
         const isOwner = addr.toLowerCase() === ownerAddr.toLowerCase();
+
+        // 실제 주소로 sheetData 업데이트
+        const fmt = a => `${a.slice(0,6)}...${a.slice(-4)}`;
+        sheetData.assets.content = `
+        <div class="sheet-row"><span>Owner wallet</span><strong>${fmt(ownerAddr)}</strong></div>
+        <div class="sheet-row"><span>Contract (Amoy)</span><strong>${fmt(CONTRACT_ADDRESS)}</strong></div>
+        <div class="sheet-row"><span>Network</span><strong>Polygon Amoy Testnet</strong></div>`;
+        sheetData.beneficiaries.content = `
+        <div class="sheet-row"><span>Heir wallet</span><strong>${fmt(heirAddr)}</strong></div>
+        <div class="sheet-row"><span>Full address</span><strong style="font-size:.7rem;word-break:break-all">${heirAddr}</strong></div>`;
 
         showTimer();
         document.querySelector('.status-bar').style.cssText += 'opacity:1;visibility:visible;';
