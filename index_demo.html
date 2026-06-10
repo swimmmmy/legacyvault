@@ -615,7 +615,7 @@ async function pollContractStatus() {
             document.body.classList.add('state-released');
             stateLabel.textContent = 'LEGACY RELEASED'; display.textContent = 'TRANSFER COMPLETE'; dateLabel.textContent = `${bal} POL -> Heir`;
             btn.textContent = 'RELEASED'; btn.disabled = true; clearInterval(pollInterval);
-        } else if (inGrace) {
+        } else if (inGrace || secs === 0) {
             document.body.classList.add('state-pending');
             stateLabel.textContent = 'HEARTBEAT EXPIRED'; display.textContent = 'TRANSFER PENDING'; dateLabel.textContent = 'Grace period active';
             const ownerAddr = await contractReadOnly.owner();
