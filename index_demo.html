@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LegacyVault</title>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Barlow+Condensed:wght@800;900&display=swap"
+          rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+    <style>
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            min-height: 100%;
+            background: #0d1a12;
+        }
+
+        body {
+            overflow-x: hidden;
+            color: #fff;
+        }
+
+        button {
+            font: inherit;
+        }
+
+        .bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+        }
+
+        .bg-photo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center 40%;
+            filter: contrast(1.15) saturate(0.75) brightness(0.78) sepia(0.18);
+        }
+
+        .bg-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(10, 22, 14, .45) 0%, rgba(8, 18, 10, .1) 40%, rgba(6, 14, 8, .55) 100%);
+        }
+
+        .bg-fade {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 45%;
+            background: linear-gradient(to top, rgba(8, 18, 10, .7) 0%, transparent 100%);
+        }
+
+        .friends-text {
+            position: fixed;
+            z-index: 10;
+            top: 8%;
+            left: 50%;
+            transform: translateX(-30%);
+            width: clamp(17.5rem, 40vw, 35rem);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .friends-line {
+            display: block;
+            font-family: 'Caveat', cursive;
+            font-weight: 600;
+            font-size: clamp(1.25rem, 2.2vw, 1.9rem);
+            color: #F5C842;
+            line-height: 1;
+            letter-spacing: .02em;
+            text-shadow: 0 0.0625rem 0.625rem rgba(0, 0, 0, .6);
+            white-space: nowrap;
+            opacity: 0;
+        }
+
+        .friends-line:nth-child(1) {
+            padding-left: 20%;
+            margin-bottom: .85em;
+            animation: fIn .5s ease .2s forwards
+        }
+
+        .friends-line:nth-child(2) {
+            padding-left: 14%;
+            margin-bottom: .85em;
+            animation: fIn .5s ease .55s forwards
+        }
+
+        .friends-line:nth-child(3) {
+            padding-left: 28%;
+            margin-bottom: .85em;
+            animation: fIn .5s ease .9s forwards
+        }
+
+        .friends-line:nth-child(4) {
+            padding-left: 5%;
+            margin-bottom: .85em;
+            animation: fIn .5s ease 1.25s forwards
+        }
+
+        .friends-line:nth-child(5) {
+            padding-left: 28%;
+            margin-bottom: .85em;
+            animation: fIn .5s ease 1.6s forwards
+        }
+
+        .friends-line:nth-child(6) {
+            padding-left: 14%;
+            animation: fIn .5s ease 1.95s forwards
+        }
+
+        @keyframes fIn {
+            from {
+                opacity: 0;
+                transform: translateY(0.3125rem)
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 20;
+            padding: 1.75rem 2.5rem;
+        }
+
+        .nav-brand {
+            font-family: 'Caveat', cursive;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, .9);
+            text-shadow: 0 0.0625rem 0.5rem rgba(0, 0, 0, .5);
+            line-height: 1;
+            margin-bottom: 0.25rem;
+        }
+
+        .nav-sub {
+            font-family: 'Caveat', cursive;
+            font-size: .85rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, .4);
+        }
+
+        /* METAMASK 버튼 */
+        .mm-wrap {
+            position: fixed;
+            z-index: 20;
+            bottom: 3rem;
+            left: 0;
+            right: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            opacity: 0;
+            animation: fIn .8s ease 2.6s forwards;
+        }
+
+        /* 타이머 스타일 (단일 컴포넌트) */
+        .timer-wrap {
+            margin-top: clamp(3.5rem, 8vh, 7rem);
+            align-self: center;
+            margin-right: 20%;
+            display: none;
+            opacity: 0;
+        }
+        .timer-wrap.visible {
+            display: block;
+            animation: fIn .6s ease forwards;
+        }
+
+        .timer-box {
+            font-family: 'Caveat', cursive;
+            left: 45%;
+            color: #F5C842;
+            text-shadow: 0 0 0.9375rem rgba(245, 200, 66, 0.4);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .timer-state {
+            font-size: clamp(.8rem, 1vw, .95rem);
+            font-family: Arial, sans-serif;
+            font-weight: 700;
+            letter-spacing: .18em;
+            margin-bottom: .4rem;
+        }
+
+        #timer-display {
+            font-size: clamp(2.4rem, 4.4vw, 4.5rem);
+            font-weight: 700;
+            line-height: .95;
+        }
+
+        .timer-date {
+            margin-top: .65rem;
+            color: #E6D115;
+            font-family: Arial, sans-serif;
+            font-size: .76rem;
+            letter-spacing: .05em;
+        }
+
+
+        .mm-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.625rem;
+            background: rgba(255, 140, 0, 0.15);
+            border: 0.0625rem solid rgba(255, 140, 0, 0.45);
+            backdrop-filter: blur(0.75rem);
+            color: #F5C842;
+            padding: 0.8125rem 2rem;
+            border-radius: 3.125rem;
+            font-family: 'Caveat', cursive;
+            font-weight: 700;
+            font-size: 1.05rem;
+            letter-spacing: .04em;
+            cursor: pointer;
+            transition: all .25s ease;
+            white-space: nowrap;
+        }
+
+        .mm-btn:hover {
+            background: rgba(255, 140, 0, .25);
+            border-color: rgba(255, 140, 0, .7);
+            transform: translateY(-0.125rem);
+        }
+
+        .mm-btn:focus-visible,
+        .status-item:focus-visible,
+        .sheet-close:focus-visible {
+            outline: 0.125rem solid #fff;
+            outline-offset: 0.25rem;
+        }
+
+        .mm-btn.connected {
+            background: rgba(245, 200, 66, .12);
+            border-color: rgba(245, 200, 66, .35);
+            color: #F5C842;
+            font-family: monospace;
+            font-size: .82rem;
+            letter-spacing: 0;
+            cursor: default;
+        }
+
+        .mm-btn.connected:hover {
+            transform: none;
+        }
+
+        /*  heartbeat*/
+        .heartbeat {
+            position: fixed;
+            bottom: 13rem;
+            left: 0;
+            width: 100%;
+            height: 6.25rem;
+            z-index: 5;
+            overflow: hidden;
+            background: transparent;
+            pointer-events: none;
+            --cursor-x: 50%;
+            --cursor-y: 50%;
+            --heartbeat-opacity: .72;
+            transition: filter .3s ease;
+        }
+
+        .heartbeat::after {
+            content: '';
+            position: absolute;
+            left: var(--cursor-x);
+            top: var(--cursor-y);
+            width: 5rem;
+            height: 5rem;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(245, 200, 66, .16), transparent 68%);
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(.7);
+            transition: opacity .25s ease, transform .25s ease;
+        }
+
+        .heartbeat.is-interactive::after {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .heartbeat.is-interactive .heartbeat-line {
+            opacity: 1;
+            filter: drop-shadow(0 0 0.2rem rgba(245, 200, 66, .55));
+        }
+
+        .heartbeat.confirmed .heartbeat-line {
+            animation: heartbeat-confirm .9s ease-out;
+            stroke-width: 2;
+        }
+
+        .heartbeat.confirmed .heartbeat-echo {
+            animation: heartbeat-echo .9s ease-out;
+        }
+
+        @keyframes heartbeat-confirm {
+            0% {
+                opacity: .2;
+                stroke-dashoffset: 1;
+            }
+            35% {
+                opacity: 1;
+                stroke-dashoffset: .25;
+            }
+            55% {
+                opacity: .55;
+                stroke-dashoffset: .1;
+            }
+            72% {
+                opacity: 1;
+                stroke-dashoffset: -.25;
+            }
+            100% {
+                opacity: .2;
+                stroke-dashoffset: -1;
+            }
+        }
+
+        @keyframes heartbeat-echo {
+            0%, 32% {
+                opacity: 0;
+                stroke-dashoffset: 1;
+            }
+            58% {
+                opacity: .32;
+                stroke-dashoffset: .15;
+            }
+            100% {
+                opacity: 0;
+                stroke-dashoffset: -1;
+            }
+        }
+
+        .checkin-copy {
+            color: rgba(255, 255, 255, .58);
+            font-family: Arial, sans-serif;
+            font-size: .7rem;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .status-bar {
+            position: fixed;
+            z-index: 20;
+            right: 2rem;
+            top: .85rem;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity .6s ease;
+        }
+
+        .status-item {
+            appearance: none;
+            border: 0;
+            border-right: 0.0625rem solid rgba(255, 255, 255, .2);
+            padding: .25rem 1.1rem;
+            background: transparent;
+            color: rgba(255, 255, 255, .72);
+            font-family: Arial, sans-serif;
+            font-size: .68rem;
+            font-weight: 700;
+            letter-spacing: .1em;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .status-item:last-child {
+            border-right: 0;
+        }
+
+        .status-item:hover {
+            color: #F5C842;
+        }
+
+        .status-item.state-safe {
+            color: #F5C842;
+        }
+
+        .bottom-sheet {
+            position: fixed;
+            z-index: 40;
+            inset: 0;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            background: rgba(2, 8, 4, .62);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity .25s ease, visibility .25s ease;
+        }
+
+        .bottom-sheet.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .sheet-panel {
+            width: min(100%, 44rem);
+            padding: 1.5rem 1.5rem 2rem;
+            border: 0.0625rem solid rgba(245, 200, 66, .25);
+            border-bottom: 0;
+            border-radius: 1.5rem 1.5rem 0 0;
+            background: rgba(9, 22, 13, .96);
+            backdrop-filter: blur(1.25rem);
+            transform: translateY(100%);
+            transition: transform .3s ease;
+        }
+
+        .bottom-sheet.open .sheet-panel {
+            transform: translateY(0);
+        }
+
+        .sheet-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+        }
+
+        .sheet-title {
+            color: #F5C842;
+            font-family: 'Caveat', cursive;
+            font-size: 1.7rem;
+        }
+
+        .sheet-close {
+            width: 2.25rem;
+            height: 2.25rem;
+            border: 0.0625rem solid rgba(255, 255, 255, .18);
+            border-radius: 50%;
+            background: transparent;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .sheet-content {
+            color: rgba(255, 255, 255, .75);
+            font-family: Arial, sans-serif;
+            font-size: .88rem;
+            line-height: 1.7;
+        }
+
+        .sheet-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: .8rem 0;
+            border-bottom: 0.0625rem solid rgba(255, 255, 255, .08);
+        }
+
+        .sheet-row strong {
+            color: #fff;
+            text-align: right;
+        }
+
+        body.state-warning .timer-box,
+        body.state-warning .status-item.state-safe {
+            color: #ff9f43;
+        }
+
+        body.state-pending .timer-box,
+        body.state-pending .status-item.state-safe {
+            color: #ff5c5c;
+        }
+
+        body.state-released .timer-box,
+        body.state-released .status-item.state-safe {
+            color: #a7aca9;
+        }
+
+        .heartbeat svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .heartbeat-line {
+            fill: none;
+            stroke: #F5C842;
+            stroke-width: 1.35;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            vector-effect: non-scaling-stroke;
+            stroke-dasharray: 1;
+            stroke-dashoffset: 1;
+            opacity: var(--heartbeat-opacity);
+            filter: drop-shadow(0 0 0.12rem rgba(245, 200, 66, .42));
+            animation: heartbeat-draw 1.8s linear infinite;
+            transition: opacity .25s ease, filter .25s ease, stroke .25s ease;
+        }
+
+        .heartbeat-echo {
+            fill: none;
+            stroke: #F5C842;
+            stroke-width: .8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            vector-effect: non-scaling-stroke;
+            opacity: .13;
+            transform: translateY(2px);
+        }
+
+        @keyframes heartbeat-draw {
+            0% {
+                stroke-dashoffset: 1;
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 1;
+            }
+
+            75% {
+                stroke-dashoffset: 0;
+                opacity: 1;
+            }
+
+            100% {
+                stroke-dashoffset: -1;
+                opacity: 0;
+            }
+        }
+
+        @media (max-width: 48rem) {
+            .friends-text {
+                position: relative;
+                top: auto;
+                left: auto;
+                transform: none;
+                width: 100%;
+                min-height: 100svh;
+                padding: 5.5rem 1rem 15rem;
+            }
+
+            .friends-line {
+                font-size: clamp(1rem, 5vw, 1.5rem);
+                white-space: normal;
+                text-align: center;
+            }
+
+            .friends-line:nth-child(n) {
+                padding-left: 0;
+                margin-bottom: 0.5rem;
+            }
+
+            .timer-wrap {
+                margin-top: 3rem;
+                margin-right: 0;
+            }
+
+            #timer-display {
+                font-size: 2.75rem;
+            }
+
+            nav {
+                padding: 1rem;
+            }
+
+            .mm-wrap {
+                bottom: 4.2rem;
+            }
+
+            .mm-btn {
+                padding: 0.6rem 1.5rem;
+                font-size: 0.9rem;
+            }
+
+            .heartbeat {
+                bottom: 11rem;
+                height: 4.5rem;
+            }
+
+            .status-bar {
+                bottom: .65rem;
+                width: 100%;
+            }
+
+            .status-item {
+                flex: 1;
+                padding: .35rem .25rem;
+                font-size: .55rem;
+                letter-spacing: .05em;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                scroll-behavior: auto !important;
+                animation-duration: .01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: .01ms !important;
+            }
+
+            .heartbeat-line {
+                animation: none;
+                stroke-dashoffset: 0;
+            }
+
+        }
+    </style>
+</head>
+<body>
+
+<div class="friends-text">
+    <span class="friends-line">One day</span>
+    <span class="friends-line">someone will need</span>
+    <span class="friends-line">your password.</span>
+    <span class="friends-line">You'll leave eventually.</span>
+    <span class="friends-line">Your assets</span>
+    <span class="friends-line">shouldn't get lost.</span>
+
+    <div class="timer-wrap">
+        <div class="timer-box">
+            <span class="timer-state" id="timer-state">YOU'RE STILL WITH US</span>
+            <span id="timer-display" aria-live="polite"></span>
+            <span class="timer-date" id="timer-date"></span>
+        </div>
+    </div>
+</div>
+
+<!--  heartbeat-->
+
+<div class="heartbeat" role="img" aria-label="heartbeat">
+    <svg viewBox="0 0 600 100" preserveAspectRatio="none">
+        <path
+                id="heartbeat-path"
+                class="heartbeat-line"
+                pathLength="1"
+                d="M 0 50
+     H 200
+     L 235 50
+     L 250 25
+     L 265 78
+     L 285 8
+     L 305 88
+     L 325 50
+     H 600"
+        />
+        <path
+                class="heartbeat-echo"
+                pathLength="1"
+                d="M 0 50 H 200 L 235 50 L 250 25 L 265 78 L 285 8 L 305 88 L 325 50 H 600"
+        />
+    </svg>
+</div>
+
+<div class="bg">
+    <img class="bg-photo" src="friends.jpg" alt=""
+         onerror="this.style.display='none';document.getElementById('bf').style.display='block';">
+    <div id="bf"
+         style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#0a1a0e,#1b3a22);"></div>
+    <div class="bg-overlay"></div>
+    <div class="bg-fade"></div>
+</div>
+
+
+<nav>
+    <div class="nav-brand">LegacyVault</div>
+    <div class="nav-sub">made by SWIMMMMY</div>
+</nav>
+
+<!-- 타이머 -->
+
+<!-- METAMASK 버튼 -->
+<div class="mm-wrap">
+    <button class="mm-btn" id="mm-btn" onclick="connectWallet()">
+        <svg viewBox="0 0 36 36" style="width:1.25rem;height:1.25rem;flex-shrink:0">
+            <path d="M32.9 1L20.2 10.3l2.3-5.5L32.9 1z" fill="#F5C842"/>
+            <path d="M3.1 1l12.6 9.4-2.2-5.6L3.1 1z" fill="#F5C842"/>
+            <path d="M28.2 25.6l-3.4 5.2 7.3 2 2.1-7.1-6-.1z" fill="#F5C842"/>
+            <path d="M1.8 25.7l2 7.1 7.3-2-3.4-5.2-5.9.1z" fill="#F5C842"/>
+            <path d="M10.7 16l-2 3 7.1.3-.2-7.7-4.9 4.4z" fill="#F5C842"/>
+            <path d="M25.3 16l-5-4.5-.2 7.8 7.1-.3-1.9-3z" fill="#F5C842"/>
+            <path d="M11.1 30.8l4.3-2.1-3.7-2.9-.6 5z" fill="#F5C842"/>
+            <path d="M20.6 28.7l4.3 2.1-.6-5-3.7 2.9z" fill="#F5C842"/>
+        </svg>
+        CONNECT TO BEGIN
+    </button>
+    <span class="checkin-copy" id="checkin-copy">MetaMask connection required</span>
+</div>
+
+<div class="status-bar" aria-label="About">
+    <button class="status-item" type="button" data-sheet="about">ABOUT</button>
+</div>
+
+<div class="bottom-sheet" id="bottom-sheet" aria-hidden="true">
+    <section class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+        <div class="sheet-header">
+            <h2 class="sheet-title" id="sheet-title"></h2>
+            <button class="sheet-close" id="sheet-close" type="button" aria-label="Close details">×</button>
+        </div>
+        <div class="sheet-content" id="sheet-content"></div>
+    </section>
+</div>
+
+<script>
+    // ── 컨트랙트 설정 ──
+    const CONTRACT_ADDRESS = '0x82183F109553BF6ce76705467D6efE65b823b49d';
+    const CONTRACT_ABI = [
+        {"inputs":[{"internalType":"address payable","name":"_heir","type":"address"}],"stateMutability":"payable","type":"constructor"},
+        {"inputs":[],"name":"heartbeat","outputs":[],"stateMutability":"nonpayable","type":"function"},
+        {"inputs":[],"name":"release","outputs":[],"stateMutability":"nonpayable","type":"function"},
+        {"inputs":[],"name":"getStatus","outputs":[{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"timeLeft","type":"uint256"},{"internalType":"bool","name":"isReleased","type":"bool"},{"internalType":"bool","name":"inGrace","type":"bool"}],"stateMutability":"view","type":"function"},
+        {"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+        {"inputs":[],"name":"heir","outputs":[{"internalType":"address payable","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+        {"stateMutability":"payable","type":"receive"}
+    ];
+
+    let contract = null;
+    let contractReadOnly = null;
+    let userAddress = null;
+    let pollInterval = null;
+    let walletConnected = false;
+    const connectButtonMarkup = document.getElementById('mm-btn').innerHTML;
+
+    const sheetData = {
+        assets: {
+            title: 'Your Assets',
+            content: `
+        <div class="sheet-row"><span>Ethereum</span><strong>1.42 ETH</strong></div>
+        <div class="sheet-row"><span>USDC</span><strong>8,250 USDC</strong></div>
+        <div class="sheet-row"><span>NFT collection</span><strong>4 items</strong></div>`
+        },
+        beneficiaries: {
+            title: 'Beneficiaries',
+            content: `
+        <div class="sheet-row"><span>Primary wallet</span><strong>0x71...A9C2 · 70%</strong></div>
+        <div class="sheet-row"><span>Secondary wallet</span><strong>0x2B...88F1 · 30%</strong></div>`
+        },
+        protection: {
+            title: 'Protection Status',
+            content: `
+        <div class="sheet-row"><span>Heartbeat window</span><strong>30 seconds</strong></div>
+        <div class="sheet-row"><span>Grace period</span><strong>${GRACE_DAYS} seconds</strong></div>
+        <div class="sheet-row"><span>Transfer status</span><strong id="sheet-transfer-state">Not scheduled</strong></div>`
+        }
+,
+        about: {
+            title: 'About LegacyVault',
+            content: `
+        <div class="sheet-row"><span>서비스</span><strong>블록체인 기반 디지털 유언장</strong></div>
+        <div class="sheet-row" style="display:block;padding:.9rem 0;border-bottom:1px solid rgba(255,255,255,.08)"><p style="color:rgba(255,255,255,.75);font-size:.88rem;line-height:1.75">LegacyVault는 이더리움 스마트 컨트랙트를 통해 디지털 자산의 상속을 자동화합니다. 사용자가 주기적으로 생존 확인(heartbeat)을 하지 않으면, 미리 지정된 수혜자에게 자산이 자동으로 이전됩니다.</p></div>
+        <div class="sheet-row" style="display:block;padding:.9rem 0;border-bottom:1px solid rgba(255,255,255,.08)"><p style="color:rgba(255,255,255,.75);font-size:.88rem;line-height:1.75">중앙화된 기관 없이, 신뢰할 수 없는 환경에서도 유언을 집행할 수 있는 탈중앙화 솔루션입니다. 비밀번호, NFT, 암호화폐 등 온체인 자산을 안전하게 보호하세요.</p></div>
+        <div class="sheet-row"><span>기술 스택</span><strong>Ethereum · Solidity · MetaMask</strong></div>
+        <div class="sheet-row"><span>제작자</span><strong>SWIMMMMY</strong></div>`
+        }    };
+
+    //심박수 기능
+    function setHeartbeatBpm(bpm) {
+        const heartbeat = document.querySelector('.heartbeat');
+        if (heartbeat.dataset.bpm === String(bpm)) return;
+
+        const line = document.querySelector('.heartbeat-line');
+        const duration = 120 / bpm;
+
+        heartbeat.dataset.bpm = String(bpm);
+        line.style.animationDuration = `${duration}s`;
+    }
+
+    setHeartbeatBpm(80);
+
+    function setupInteractiveHeartbeat() {
+        const heartbeat = document.querySelector('.heartbeat');
+        let frame;
+
+        document.addEventListener('pointermove', (event) => {
+            cancelAnimationFrame(frame);
+            frame = requestAnimationFrame(() => {
+                const bounds = heartbeat.getBoundingClientRect();
+                const distance = Math.max(
+                    bounds.top - event.clientY,
+                    event.clientY - bounds.bottom,
+                    0
+                );
+                const isNear = distance < 90;
+                const x = Math.min(Math.max(event.clientX - bounds.left, 0), bounds.width);
+                const y = Math.min(Math.max(event.clientY - bounds.top, 0), bounds.height);
+
+                heartbeat.style.setProperty('--cursor-x', `${x}px`);
+                heartbeat.style.setProperty('--cursor-y', `${y}px`);
+                heartbeat.style.setProperty('--heartbeat-opacity', isNear ? '.95' : '.72');
+                heartbeat.classList.toggle('is-interactive', isNear);
+                setHeartbeatBpm(isNear ? 105 : 80);
+            });
+        });
+
+        document.addEventListener('pointerleave', () => {
+            heartbeat.classList.remove('is-interactive');
+            heartbeat.style.setProperty('--heartbeat-opacity', '.72');
+            setHeartbeatBpm(80);
+        });
+    }
+
+    // ── 컨트랙트 상태 폴링 ──
+    async function pollContractStatus() {
+        if (!contractReadOnly) return;
+        try {
+            const [balance, timeLeft, isReleased, inGrace] = await contractReadOnly.getStatus();
+            const display = document.querySelector('#timer-display');
+            const stateLabel = document.querySelector('#timer-state');
+            const dateLabel = document.querySelector('#timer-date');
+            const btn = document.getElementById('mm-btn');
+            const copy = document.getElementById('checkin-copy');
+            const secs = Number(timeLeft);
+            const bal = ethers.formatEther(balance);
+
+            document.body.classList.remove('state-warning', 'state-pending', 'state-released');
+
+            if (isReleased) {
+                document.body.classList.add('state-released');
+                stateLabel.textContent = 'LEGACY RELEASED';
+                display.textContent = 'TRANSFER COMPLETE';
+                dateLabel.textContent = `${bal} POL → Heir`;
+                btn.textContent = 'RELEASED';
+                btn.disabled = true;
+                clearInterval(pollInterval);
+            } else if (inGrace) {
+                document.body.classList.add('state-pending');
+                stateLabel.textContent = 'HEARTBEAT EXPIRED';
+                display.textContent = 'TRANSFER PENDING';
+                dateLabel.textContent = 'Grace period active';
+                // heir면 release 버튼 보여주기
+                const ownerAddr = await contractReadOnly.owner();
+                if (userAddress && userAddress.toLowerCase() !== ownerAddr.toLowerCase()) {
+                    btn.textContent = 'RELEASE ASSETS';
+                    btn.onclick = releaseAssets;
+                    btn.disabled = false;
+                    copy.textContent = 'Grace period — claim inheritance';
+                }
+            } else if (secs <= 5) {
+                document.body.classList.add('state-warning');
+                stateLabel.textContent = 'CHECK IN SOON';
+                display.textContent = `${secs} SEC LEFT`;
+                dateLabel.textContent = `Resets in ${secs}s`;
+            } else {
+                stateLabel.textContent = `YOU'RE STILL WITH US`;
+                display.textContent = `${secs} SEC LEFT`;
+                dateLabel.textContent = `${bal} POL secured · Resets in ${secs}s`;
+            }
+        } catch (e) {
+            console.error('poll error', e);
+        }
+    }
+
+    async function confirmHeartbeat() {
+        if (!contract) return;
+        const btn = document.getElementById('mm-btn');
+        const heartbeatEl = document.querySelector('.heartbeat');
+        try {
+            btn.textContent = 'CONFIRMING...';
+            btn.disabled = true;
+            const tx = await contract.heartbeat();
+            await tx.wait();
+            heartbeatEl.classList.remove('confirmed');
+            void heartbeatEl.offsetWidth;
+            heartbeatEl.classList.add('confirmed');
+            btn.textContent = 'HEARTBEAT CONFIRMED';
+            document.getElementById('checkin-copy').textContent = 'Resets in 30s';
+            setTimeout(() => {
+                btn.textContent = `I'M STILL HERE`;
+                btn.disabled = false;
+                document.getElementById('checkin-copy').textContent = 'Extend for another 30 seconds';
+                heartbeatEl.classList.remove('confirmed');
+            }, 1800);
+            pollContractStatus();
+        } catch (e) {
+            btn.textContent = `I'M STILL HERE`;
+            btn.disabled = false;
+            if (e.code !== 4001) alert('트랜잭션 실패: ' + (e.shortMessage || e.message));
+        }
+    }
+
+    async function releaseAssets() {
+        if (!contract) return;
+        const btn = document.getElementById('mm-btn');
+        try {
+            btn.textContent = 'RELEASING...';
+            btn.disabled = true;
+            const tx = await contract.release();
+            await tx.wait();
+            pollContractStatus();
+        } catch (e) {
+            btn.textContent = 'RELEASE ASSETS';
+            btn.disabled = false;
+            if (e.code !== 4001) alert('트랜잭션 실패: ' + (e.shortMessage || e.message));
+        }
+    }
+
+    function showTimer() {
+        document.querySelector('.timer-wrap').classList.add('visible');
+    }
+
+    async function setConnectedState(addr) {
+        walletConnected = true;
+        userAddress = addr;
+        const btn = document.getElementById('mm-btn');
+        const copy = document.getElementById('checkin-copy');
+
+        // ethers.js v6 provider + contract
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signerObj = await provider.getSigner();
+        contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signerObj);
+        contractReadOnly = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+
+        // owner vs heir 확인
+        const ownerAddr = await contractReadOnly.owner();
+        const isOwner = addr.toLowerCase() === ownerAddr.toLowerCase();
+
+        showTimer();
+        document.querySelector('.status-bar').style.cssText += 'opacity:1;visibility:visible;';
+        btn.classList.remove('connected');
+
+        if (isOwner) {
+            btn.innerHTML = `I'M STILL HERE`;
+            btn.onclick = confirmHeartbeat;
+            copy.textContent = 'Extend for another 30 seconds';
+        } else {
+            btn.innerHTML = `HEIR CONNECTED`;
+            btn.disabled = true;
+            copy.textContent = 'Waiting for heartbeat to expire...';
+        }
+        btn.setAttribute('aria-label', `Wallet ${addr.slice(0, 6)}...${addr.slice(-4)} connected`);
+
+        pollContractStatus();
+        pollInterval = setInterval(pollContractStatus, 2000);
+    }
+
+    function setDisconnectedState() {
+        walletConnected = false;
+        clearInterval(pollInterval);
+        const btn = document.getElementById('mm-btn');
+        btn.innerHTML = connectButtonMarkup;
+        btn.onclick = connectWallet;
+        btn.disabled = false;
+        btn.removeAttribute('aria-label');
+        document.getElementById('checkin-copy').textContent = 'MetaMask connection required';
+    }
+
+    window.addEventListener('load', function () {
+        setupInteractiveHeartbeat();
+
+        document.querySelectorAll('[data-sheet]').forEach((button) => {
+            button.addEventListener('click', () => openSheet(button.dataset.sheet));
+        });
+
+        document.getElementById('sheet-close').addEventListener('click', closeSheet);
+        document.getElementById('bottom-sheet').addEventListener('click', (event) => {
+            if (event.target.id === 'bottom-sheet') closeSheet();
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') closeSheet();
+        });
+
+        if (window.ethereum) {
+            window.ethereum.request({method: 'eth_accounts'}).then((accounts) => {
+                if (accounts[0]) setConnectedState(accounts[0]);
+            });
+            window.ethereum.on('accountsChanged', (accounts) => {
+                if (accounts[0]) setConnectedState(accounts[0]);
+                else setDisconnectedState();
+            });
+        }
+    });
+
+    function openSheet(type) {
+        const sheet = document.getElementById('bottom-sheet');
+        document.getElementById('sheet-title').textContent = sheetData[type].title;
+        document.getElementById('sheet-content').innerHTML = sheetData[type].content;
+        sheet.classList.add('open');
+        sheet.setAttribute('aria-hidden', 'false');
+        document.getElementById('sheet-close').focus();
+    }
+
+    function closeSheet() {
+        const sheet = document.getElementById('bottom-sheet');
+        sheet.classList.remove('open');
+        sheet.setAttribute('aria-hidden', 'true');
+    }
+
+    async function connectWallet() {
+        if (typeof window.ethereum !== 'undefined') {
+            const btn = document.getElementById('mm-btn');
+            btn.innerHTML = 'CONNECTING...';
+            btn.disabled = true;
+            try {
+                const accounts = await window.ethereum.request({method: 'eth_requestAccounts'});
+                await setConnectedState(accounts[0]);
+                btn.disabled = false;
+            } catch (err) {
+                setDisconnectedState();
+                if (err.code === 4001) alert('연결을 취소했어요.');
+            }
+        } else {
+            document.getElementById('demo-modal-backdrop').classList.add('open');
+        }
+    }
+
+    function closeDemoModal() {
+        document.getElementById('demo-modal-backdrop').classList.remove('open');
+    }
+
+    function demoConnect() {
+        closeDemoModal();
+        setConnectedState('0x71C3b8a2F4e1d9c0A7B5E2D3F6C8A9C2E1B4D7F0');
+    }
+</script>
+
+<!-- Demo MetaMask Modal -->
+<div id="demo-modal-backdrop" style="position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s">
+    <div style="width:22rem;background:#1b1f2e;border-radius:1.25rem;padding:1.75rem 1.5rem 1.5rem;box-shadow:0 1.5rem 4rem rgba(0,0,0,.6);text-align:center">
+        <svg viewBox="0 0 35 33" style="width:3.5rem;height:3.5rem;margin:0 auto 1rem;display:block">
+            <path d="M32.9 1L20.2 10.3l2.3-5.5L32.9 1z" fill="#E17726"/>
+            <path d="M2.1 1l12.6 9.4-2.2-5.6L2.1 1z" fill="#E27625"/>
+            <path d="M28.2 23.6l-3.4 5.2 7.3 2 2.1-7.1-6-.1z" fill="#E27625"/>
+            <path d="M.8 23.7l2 7.1 7.3-2-3.4-5.2-5.9.1z" fill="#E27625"/>
+            <path d="M9.7 15l-2 3 7.1.3-.2-7.7-4.9 4.4z" fill="#E27625"/>
+            <path d="M25.3 15l-5-4.5-.2 7.8 7.1-.3-1.9-3z" fill="#E27625"/>
+            <path d="M10.1 28.8l4.3-2.1-3.7-2.9-.6 5z" fill="#E27625"/>
+            <path d="M20.6 26.7l4.3 2.1-.6-5-3.7 2.9z" fill="#E27625"/>
+        </svg>
+        <div style="font-family:Arial,sans-serif;font-weight:700;font-size:1rem;color:#fff;margin-bottom:.4rem">연결 요청</div>
+        <div style="font-family:monospace;font-size:.78rem;color:rgba(255,255,255,.45);margin-bottom:1.2rem">0x71C3...A9C2</div>
+        <div style="background:rgba(255,255,255,.06);border-radius:.75rem;padding:.7rem 1rem;margin-bottom:1.4rem;display:flex;align-items:center;gap:.6rem">
+            <span style="width:.5rem;height:.5rem;border-radius:50%;background:#4ade80;flex-shrink:0;display:inline-block"></span>
+            <span style="font-family:Arial,sans-serif;font-size:.8rem;color:rgba(255,255,255,.7)">localhost:3000 이 지갑 연결을 요청합니다</span>
+        </div>
+        <div style="display:flex;gap:.75rem">
+            <button onclick="closeDemoModal()" style="flex:1;padding:.7rem;border-radius:.75rem;border:1px solid rgba(255,255,255,.18);background:transparent;color:rgba(255,255,255,.7);font-family:Arial,sans-serif;font-size:.88rem;font-weight:600;cursor:pointer">취소</button>
+            <button onclick="demoConnect()" style="flex:1;padding:.7rem;border-radius:.75rem;border:none;background:#f6851b;color:#fff;font-family:Arial,sans-serif;font-size:.88rem;font-weight:700;cursor:pointer">연결</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('demo-modal-backdrop').addEventListener('click', function(e) {
+        if (e.target === this) closeDemoModal();
+    });
+    // CSS transition helper
+    const _backdrop = document.getElementById('demo-modal-backdrop');
+    const _origOpen = closeDemoModal;
+    window._modalOpen = function() {
+        _backdrop.style.opacity = '0'; _backdrop.style.visibility = 'hidden';
+    };
+    document.querySelector('#demo-modal-backdrop').style.cssText += '';
+    // Override classList for inline style modal
+    const origAdd = DOMTokenList.prototype.add;
+    const origRemove = DOMTokenList.prototype.remove;
+    document.getElementById('demo-modal-backdrop').classList.add = function(cls) {
+        if (cls === 'open') { this._el = this._el || document.getElementById('demo-modal-backdrop'); document.getElementById('demo-modal-backdrop').style.opacity='1'; document.getElementById('demo-modal-backdrop').style.visibility='visible'; }
+        origAdd.call(this, cls);
+    };
+    document.getElementById('demo-modal-backdrop').classList.remove = function(cls) {
+        if (cls === 'open') { document.getElementById('demo-modal-backdrop').style.opacity='0'; document.getElementById('demo-modal-backdrop').style.visibility='hidden'; }
+        origRemove.call(this, cls);
+    };
+</script>
+
+</body>
+</html>
