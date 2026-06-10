@@ -244,7 +244,12 @@ function saveHeirs(heirs) { localStorage.setItem(HEIRS_KEY, JSON.stringify(heirs
 
 /* ── EmailJS config ────────────────────────────── */
 function getEmailjsConfig() {
-    try { return JSON.parse(localStorage.getItem(EJSCONF_KEY)) || {}; } catch { return {}; }
+    return {
+        serviceId:  'service_xinmx9b',
+        templateId: 'template_0ib62ux',
+        publicKey:  '0cAN7uuUhTdvZllao',
+        fromName:   'LegacyVault'
+    };
 }
 
 /* ── Scheduled messages ────────────────────────── */
