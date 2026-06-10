@@ -172,14 +172,18 @@
 
         /* 타이머 스타일 (단일 컴포넌트) */
         .timer-wrap {
-            margin-top: clamp(3.5rem, 8vh, 7rem);
-            align-self: center;
-            margin-right: 20%;
+            position: fixed;
+            z-index: 15;
+            left: 0;
+            right: 0;
+            bottom: 14rem;
             display: none;
             opacity: 0;
+            text-align: center;
         }
         .timer-wrap.visible {
-            display: block;
+            display: flex;
+            justify-content: center;
             animation: fIn .6s ease forwards;
         }
 
@@ -633,13 +637,13 @@
     <span class="friends-line">You'll leave eventually.</span>
     <span class="friends-line">Your assets</span>
     <span class="friends-line">shouldn't get lost.</span>
+</div>
 
-    <div class="timer-wrap">
-        <div class="timer-box">
-            <span class="timer-state" id="timer-state">YOU'RE STILL WITH US</span>
-            <span id="timer-display" aria-live="polite"></span>
-            <span class="timer-date" id="timer-date"></span>
-        </div>
+<div class="timer-wrap">
+    <div class="timer-box">
+        <span class="timer-state" id="timer-state">YOU'RE STILL WITH US</span>
+        <span id="timer-display" aria-live="polite"></span>
+        <span class="timer-date" id="timer-date"></span>
     </div>
 </div>
 
