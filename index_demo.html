@@ -940,8 +940,18 @@
         btn.classList.remove('connected');
 
         if (isOwner) {
+            // 로그인 시 자동으로 heartbeat 호출 → 타이머 60초 리셋
+            btn.innerHTML = 'STARTING TIMER...';
+            btn.disabled = true;
+            copy.textContent = 'Resetting timer...';
+            try {
+                const tx = await contract.heartbeat();
+                btn.innerHTML = 'CONFIRMING...';
+                await tx.wait();
+            } catch(e) { /* 이미 최신이거나 유저가 취소한 경우 무시 */ }
             btn.innerHTML = `I'M STILL HERE`;
             btn.onclick = confirmHeartbeat;
+            btn.disabled = false;
             copy.textContent = 'Extend for another 30 seconds';
         } else {
             btn.innerHTML = `HEIR CONNECTED`;
