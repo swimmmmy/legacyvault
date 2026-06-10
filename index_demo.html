@@ -458,10 +458,7 @@ function buildBeneficiariesContent(heirAddr, balPOL) {
     const totalText  = total === 100 ? '✓ Total 100%' : `Total ${total}% — must equal 100`;
 
     return `
-    <div class="sheet-row"><span>Current heir (on-chain)</span><strong style="font-size:.72rem;word-break:break-all">${heirAddr}</strong></div>
-    <div class="sheet-row"><span>Locked amount</span><strong style="color:#F5C842">${balPOL} POL</strong></div>
-
-    <div class="section-label" style="margin-top:1.4rem">Last Will &amp; Testament</div>
+    <div class="section-label" style="margin-top:.2rem">Last Will &amp; Testament</div>
 
     <div class="section-label" style="margin-top:.8rem">Asset Distribution</div>
     <div class="heir-rows" id="heir-rows">${heirRowsHTML}</div>
@@ -668,9 +665,6 @@ async function setConnectedState(addr) {
     const balPOL      = parseFloat(ethers.formatEther(balance)).toFixed(4);
 
     sheetData.assets.content = `
-        <div class="sheet-row"><span>Owner wallet</span><strong>${fmt(ownerAddr)}</strong></div>
-        <div class="sheet-row"><span>Contract balance</span><strong style="color:#F5C842">${balPOL} POL</strong></div>
-        <div class="sheet-row"><span>Contract address</span><strong>${fmt(CONTRACT_ADDRESS)}</strong></div>
         <div class="sheet-row"><span>Network</span><strong>Polygon Amoy Testnet</strong></div>`;
 
     sheetData.beneficiaries = {
