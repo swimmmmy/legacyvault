@@ -4,443 +4,139 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LegacyVault</title>
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Barlow+Condensed:wght@800;900&display=swap"
-          rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Barlow+Condensed:wght@800;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <style>
-        *, *::before, *::after {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; min-height: 100%; background: #0d1a12; }
+        body { overflow-x: hidden; color: #fff; }
+        button { font: inherit; }
 
-        html, body {
-            width: 100%;
-            height: 100%;
-            min-height: 100%;
-            background: #0d1a12;
-        }
+        .bg { position: fixed; inset: 0; z-index: 0; }
+        .bg-photo { width: 100%; height: 100%; object-fit: cover; object-position: center 40%; filter: contrast(1.15) saturate(0.75) brightness(0.78) sepia(0.18); }
+        .bg-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,22,14,.45) 0%, rgba(8,18,10,.1) 40%, rgba(6,14,8,.55) 100%); }
+        .bg-fade { position: absolute; bottom: 0; left: 0; right: 0; height: 45%; background: linear-gradient(to top, rgba(8,18,10,.7) 0%, transparent 100%); }
 
-        body {
-            overflow-x: hidden;
-            color: #fff;
-        }
-
-        button {
-            font: inherit;
-        }
-
-        .bg {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-        }
-
-        .bg-photo {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            object-position: center 40%;
-            filter: contrast(1.15) saturate(0.75) brightness(0.78) sepia(0.18);
-        }
-
-        .bg-overlay {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(180deg, rgba(10, 22, 14, .45) 0%, rgba(8, 18, 10, .1) 40%, rgba(6, 14, 8, .55) 100%);
-        }
-
-        .bg-fade {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 45%;
-            background: linear-gradient(to top, rgba(8, 18, 10, .7) 0%, transparent 100%);
-        }
-
-        .friends-text {
-            position: fixed;
-            z-index: 10;
-            top: 8%;
-            left: 50%;
-            transform: translateX(-30%);
-            width: clamp(17.5rem, 40vw, 35rem);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .friends-line {
-            display: block;
-            font-family: 'Caveat', cursive;
-            font-weight: 600;
-            font-size: clamp(1.25rem, 2.2vw, 1.9rem);
-            color: #F5C842;
-            line-height: 1;
-            letter-spacing: .02em;
-            text-shadow: 0 0.0625rem 0.625rem rgba(0, 0, 0, .6);
-            white-space: nowrap;
-            opacity: 0;
-        }
-
+        .friends-text { position: fixed; z-index: 10; top: 8%; left: 50%; transform: translateX(-30%); width: clamp(17.5rem, 40vw, 35rem); display: flex; flex-direction: column; }
+        .friends-line { display: block; font-family: 'Caveat', cursive; font-weight: 600; font-size: clamp(1.25rem, 2.2vw, 1.9rem); color: #F5C842; line-height: 1; letter-spacing: .02em; text-shadow: 0 0.0625rem 0.625rem rgba(0,0,0,.6); white-space: nowrap; opacity: 0; }
         .friends-line:nth-child(1) { padding-left: 20%; margin-bottom: .85em; animation: fIn .5s ease .2s forwards }
         .friends-line:nth-child(2) { padding-left: 14%; margin-bottom: .85em; animation: fIn .5s ease .55s forwards }
         .friends-line:nth-child(3) { padding-left: 28%; margin-bottom: .85em; animation: fIn .5s ease .9s forwards }
         .friends-line:nth-child(4) { padding-left: 5%; margin-bottom: .85em; animation: fIn .5s ease 1.25s forwards }
         .friends-line:nth-child(5) { padding-left: 28%; margin-bottom: .85em; animation: fIn .5s ease 1.6s forwards }
         .friends-line:nth-child(6) { padding-left: 14%; animation: fIn .5s ease 1.95s forwards }
+        @keyframes fIn { from { opacity: 0; transform: translateY(0.3125rem) } to { opacity: 1; transform: translateY(0) } }
 
-        @keyframes fIn {
-            from { opacity: 0; transform: translateY(0.3125rem) }
-            to { opacity: 1; transform: translateY(0) }
-        }
+        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 20; padding: 1.75rem 2.5rem; }
+        .nav-brand { font-family: 'Caveat', cursive; font-weight: 700; font-size: 1.1rem; color: rgba(255,255,255,.9); text-shadow: 0 0.0625rem 0.5rem rgba(0,0,0,.5); line-height: 1; margin-bottom: .25rem; }
+        .nav-sub { font-family: 'Caveat', cursive; font-size: .85rem; font-weight: 500; color: rgba(255,255,255,.4); }
 
-        nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 20;
-            padding: 1.75rem 2.5rem;
-        }
+        .mm-wrap { position: fixed; z-index: 20; bottom: 3rem; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; gap: 1rem; opacity: 0; animation: fIn .8s ease 2.6s forwards; }
 
-        .nav-brand {
-            font-family: 'Caveat', cursive;
-            font-weight: 700;
-            font-size: 1.1rem;
-            color: rgba(255, 255, 255, .9);
-            text-shadow: 0 0.0625rem 0.5rem rgba(0, 0, 0, .5);
-            line-height: 1;
-            margin-bottom: 0.25rem;
-        }
+        .timer-wrap { position: fixed; z-index: 15; left: 0; right: 0; bottom: 14rem; display: none; opacity: 0; text-align: center; }
+        .timer-wrap.visible { display: flex; justify-content: center; animation: fIn .6s ease forwards; }
+        .timer-box { font-family: 'Caveat', cursive; color: #F5C842; text-shadow: 0 0 0.9375rem rgba(245,200,66,.4); display: flex; flex-direction: column; align-items: center; text-align: center; }
+        .timer-state { font-size: clamp(.8rem, 1vw, .95rem); font-family: Arial, sans-serif; font-weight: 700; letter-spacing: .18em; margin-bottom: .4rem; }
+        #timer-display { font-size: clamp(2.4rem, 4.4vw, 4.5rem); font-weight: 700; line-height: .95; }
+        .timer-date { margin-top: .65rem; color: #E6D115; font-family: Arial, sans-serif; font-size: .76rem; letter-spacing: .05em; }
 
-        .nav-sub {
-            font-family: 'Caveat', cursive;
-            font-size: .85rem;
-            font-weight: 500;
-            color: rgba(255, 255, 255, .4);
-        }
-
-        .mm-wrap {
-            position: fixed;
-            z-index: 20;
-            bottom: 3rem;
-            left: 0;
-            right: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-            opacity: 0;
-            animation: fIn .8s ease 2.6s forwards;
-        }
-
-        .timer-wrap {
-            position: fixed;
-            z-index: 15;
-            left: 0;
-            right: 0;
-            bottom: 14rem;
-            display: none;
-            opacity: 0;
-            text-align: center;
-        }
-        .timer-wrap.visible {
-            display: flex;
-            justify-content: center;
-            animation: fIn .6s ease forwards;
-        }
-
-        .timer-box {
-            font-family: 'Caveat', cursive;
-            left: 45%;
-            color: #F5C842;
-            text-shadow: 0 0 0.9375rem rgba(245, 200, 66, 0.4);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-        }
-
-        .timer-state {
-            font-size: clamp(.8rem, 1vw, .95rem);
-            font-family: Arial, sans-serif;
-            font-weight: 700;
-            letter-spacing: .18em;
-            margin-bottom: .4rem;
-        }
-
-        #timer-display {
-            font-size: clamp(2.4rem, 4.4vw, 4.5rem);
-            font-weight: 700;
-            line-height: .95;
-        }
-
-        .timer-date {
-            margin-top: .65rem;
-            color: #E6D115;
-            font-family: Arial, sans-serif;
-            font-size: .76rem;
-            letter-spacing: .05em;
-        }
-
-        .mm-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.625rem;
-            background: rgba(255, 140, 0, 0.15);
-            border: 0.0625rem solid rgba(255, 140, 0, 0.45);
-            backdrop-filter: blur(0.75rem);
-            color: #F5C842;
-            padding: 0.8125rem 2rem;
-            border-radius: 3.125rem;
-            font-family: 'Caveat', cursive;
-            font-weight: 700;
-            font-size: 1.05rem;
-            letter-spacing: .04em;
-            cursor: pointer;
-            transition: all .25s ease;
-            white-space: nowrap;
-        }
-
-        .mm-btn:hover {
-            background: rgba(255, 140, 0, .25);
-            border-color: rgba(255, 140, 0, .7);
-            transform: translateY(-0.125rem);
-        }
-
-        .mm-btn:focus-visible,
-        .status-item:focus-visible,
-        .sheet-close:focus-visible {
-            outline: 0.125rem solid #fff;
-            outline-offset: 0.25rem;
-        }
-
-        .mm-btn.connected {
-            background: rgba(245, 200, 66, .12);
-            border-color: rgba(245, 200, 66, .35);
-            color: #F5C842;
-            font-family: monospace;
-            font-size: .82rem;
-            letter-spacing: 0;
-            cursor: default;
-        }
-
+        .mm-btn { display: inline-flex; align-items: center; gap: .625rem; background: rgba(255,140,0,.15); border: .0625rem solid rgba(255,140,0,.45); backdrop-filter: blur(.75rem); color: #F5C842; padding: .8125rem 2rem; border-radius: 3.125rem; font-family: 'Caveat', cursive; font-weight: 700; font-size: 1.05rem; letter-spacing: .04em; cursor: pointer; transition: all .25s ease; white-space: nowrap; }
+        .mm-btn:hover { background: rgba(255,140,0,.25); border-color: rgba(255,140,0,.7); transform: translateY(-.125rem); }
+        .mm-btn:focus-visible, .status-item:focus-visible, .sheet-close:focus-visible { outline: .125rem solid #fff; outline-offset: .25rem; }
+        .mm-btn.connected { background: rgba(245,200,66,.12); border-color: rgba(245,200,66,.35); color: #F5C842; font-family: monospace; font-size: .82rem; letter-spacing: 0; cursor: default; }
         .mm-btn.connected:hover { transform: none; }
+        .checkin-copy { color: rgba(255,255,255,.58); font-family: Arial, sans-serif; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; }
 
-        .heartbeat {
-            position: fixed;
-            bottom: 13rem;
-            left: 0;
-            width: 100%;
-            height: 6.25rem;
-            z-index: 5;
-            overflow: hidden;
-            background: transparent;
-            pointer-events: none;
-            --cursor-x: 50%;
-            --cursor-y: 50%;
-            --heartbeat-opacity: .72;
-            transition: filter .3s ease;
-        }
-
-        .heartbeat::after {
-            content: '';
-            position: absolute;
-            left: var(--cursor-x);
-            top: var(--cursor-y);
-            width: 5rem;
-            height: 5rem;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(245, 200, 66, .16), transparent 68%);
-            opacity: 0;
-            transform: translate(-50%, -50%) scale(.7);
-            transition: opacity .25s ease, transform .25s ease;
-        }
-
-        .heartbeat.is-interactive::after { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-        .heartbeat.is-interactive .heartbeat-line { opacity: 1; filter: drop-shadow(0 0 0.2rem rgba(245, 200, 66, .55)); }
-
+        .heartbeat { position: fixed; bottom: 13rem; left: 0; width: 100%; height: 6.25rem; z-index: 5; overflow: hidden; background: transparent; pointer-events: none; --cursor-x: 50%; --cursor-y: 50%; --heartbeat-opacity: .72; transition: filter .3s ease; }
+        .heartbeat::after { content: ''; position: absolute; left: var(--cursor-x); top: var(--cursor-y); width: 5rem; height: 5rem; border-radius: 50%; background: radial-gradient(circle, rgba(245,200,66,.16), transparent 68%); opacity: 0; transform: translate(-50%,-50%) scale(.7); transition: opacity .25s ease, transform .25s ease; }
+        .heartbeat.is-interactive::after { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+        .heartbeat.is-interactive .heartbeat-line { opacity: 1; filter: drop-shadow(0 0 .2rem rgba(245,200,66,.55)); }
         .heartbeat.confirmed .heartbeat-line { animation: heartbeat-confirm .9s ease-out; stroke-width: 2; }
         .heartbeat.confirmed .heartbeat-echo { animation: heartbeat-echo .9s ease-out; }
+        @keyframes heartbeat-confirm { 0%{opacity:.2;stroke-dashoffset:1} 35%{opacity:1;stroke-dashoffset:.25} 55%{opacity:.55;stroke-dashoffset:.1} 72%{opacity:1;stroke-dashoffset:-.25} 100%{opacity:.2;stroke-dashoffset:-1} }
+        @keyframes heartbeat-echo { 0%,32%{opacity:0;stroke-dashoffset:1} 58%{opacity:.32;stroke-dashoffset:.15} 100%{opacity:0;stroke-dashoffset:-1} }
 
-        @keyframes heartbeat-confirm {
-            0% { opacity: .2; stroke-dashoffset: 1; }
-            35% { opacity: 1; stroke-dashoffset: .25; }
-            55% { opacity: .55; stroke-dashoffset: .1; }
-            72% { opacity: 1; stroke-dashoffset: -.25; }
-            100% { opacity: .2; stroke-dashoffset: -1; }
-        }
-
-        @keyframes heartbeat-echo {
-            0%, 32% { opacity: 0; stroke-dashoffset: 1; }
-            58% { opacity: .32; stroke-dashoffset: .15; }
-            100% { opacity: 0; stroke-dashoffset: -1; }
-        }
-
-        .checkin-copy {
-            color: rgba(255, 255, 255, .58);
-            font-family: Arial, sans-serif;
-            font-size: .7rem;
-            letter-spacing: .08em;
-            text-transform: uppercase;
-        }
-
-        .status-bar {
-            position: fixed;
-            z-index: 20;
-            right: 2rem;
-            top: .85rem;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity .6s ease;
-        }
-
-        .status-item {
-            appearance: none;
-            border: 0;
-            border-right: 0.0625rem solid rgba(255, 255, 255, .2);
-            padding: .25rem 1.1rem;
-            background: transparent;
-            color: rgba(255, 255, 255, .72);
-            font-family: Arial, sans-serif;
-            font-size: .68rem;
-            font-weight: 700;
-            letter-spacing: .1em;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
+        .status-bar { position: fixed; z-index: 20; right: 2rem; top: .85rem; display: flex; align-items: center; justify-content: flex-end; opacity: 0; visibility: hidden; transition: opacity .6s ease; }
+        .status-item { appearance: none; border: 0; border-right: .0625rem solid rgba(255,255,255,.2); padding: .25rem 1.1rem; background: transparent; color: rgba(255,255,255,.72); font-family: Arial, sans-serif; font-size: .68rem; font-weight: 700; letter-spacing: .1em; cursor: pointer; white-space: nowrap; }
         .status-item:last-child { border-right: 0; }
         .status-item:hover { color: #F5C842; }
         .status-item.state-safe { color: #F5C842; }
 
-        .bottom-sheet {
-            position: fixed;
-            z-index: 40;
-            inset: 0;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            background: rgba(2, 8, 4, .62);
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity .25s ease, visibility .25s ease;
-        }
-
+        /* Bottom sheet */
+        .bottom-sheet { position: fixed; z-index: 40; inset: 0; display: flex; align-items: flex-end; justify-content: center; background: rgba(2,8,4,.62); opacity: 0; visibility: hidden; transition: opacity .25s ease, visibility .25s ease; }
         .bottom-sheet.open { opacity: 1; visibility: visible; }
-
-        .sheet-panel {
-            width: min(100%, 44rem);
-            padding: 1.5rem 1.5rem 2rem;
-            border: 0.0625rem solid rgba(245, 200, 66, .25);
-            border-bottom: 0;
-            border-radius: 1.5rem 1.5rem 0 0;
-            background: rgba(9, 22, 13, .96);
-            backdrop-filter: blur(1.25rem);
-            transform: translateY(100%);
-            transition: transform .3s ease;
-        }
-
+        .sheet-panel { width: min(100%, 44rem); max-height: 85vh; overflow-y: auto; padding: 1.5rem 1.5rem 2rem; border: .0625rem solid rgba(245,200,66,.25); border-bottom: 0; border-radius: 1.5rem 1.5rem 0 0; background: rgba(9,22,13,.96); backdrop-filter: blur(1.25rem); transform: translateY(100%); transition: transform .3s ease; }
         .bottom-sheet.open .sheet-panel { transform: translateY(0); }
-
-        .sheet-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 1.25rem;
-        }
-
+        .sheet-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
         .sheet-title { color: #F5C842; font-family: 'Caveat', cursive; font-size: 1.7rem; }
-
-        .sheet-close {
-            width: 2.25rem;
-            height: 2.25rem;
-            border: 0.0625rem solid rgba(255, 255, 255, .18);
-            border-radius: 50%;
-            background: transparent;
-            color: #fff;
-            cursor: pointer;
-        }
-
-        .sheet-content {
-            color: rgba(255, 255, 255, .75);
-            font-family: Arial, sans-serif;
-            font-size: .88rem;
-            line-height: 1.7;
-        }
-
-        .sheet-row {
-            display: flex;
-            justify-content: space-between;
-            gap: 1rem;
-            padding: .8rem 0;
-            border-bottom: 0.0625rem solid rgba(255, 255, 255, .08);
-        }
-
+        .sheet-close { width: 2.25rem; height: 2.25rem; border: .0625rem solid rgba(255,255,255,.18); border-radius: 50%; background: transparent; color: #fff; cursor: pointer; flex-shrink: 0; }
+        .sheet-content { color: rgba(255,255,255,.75); font-family: Arial, sans-serif; font-size: .88rem; line-height: 1.7; }
+        .sheet-row { display: flex; justify-content: space-between; gap: 1rem; padding: .8rem 0; border-bottom: .0625rem solid rgba(255,255,255,.08); }
         .sheet-row strong { color: #fff; text-align: right; }
 
-        body.state-warning .timer-box,
-        body.state-warning .status-item.state-safe { color: #ff9f43; }
+        /* Will / Letters section labels */
+        .section-label { color: rgba(255,255,255,.45); font-size: .7rem; letter-spacing: .1em; font-family: Arial, sans-serif; text-transform: uppercase; margin-bottom: .5rem; margin-top: 1.2rem; }
+        .will-textarea { width: 100%; background: rgba(255,255,255,.05); border: 1px solid rgba(245,200,66,.2); border-radius: .5rem; padding: .65rem .8rem; color: #fff; font-family: 'Caveat', cursive; font-size: 1rem; line-height: 1.5; resize: vertical; min-height: 4.5rem; outline: none; transition: border-color .2s; }
+        .will-textarea:focus { border-color: rgba(245,200,66,.5); }
+        .will-textarea::placeholder { color: rgba(255,255,255,.25); }
+        .will-save-btn { margin-top: 1rem; width: 100%; padding: .7rem; border-radius: .5rem; border: none; background: rgba(245,200,66,.18); color: #F5C842; font-family: Arial, sans-serif; font-weight: 700; font-size: .82rem; letter-spacing: .08em; cursor: pointer; transition: background .2s; }
+        .will-save-btn:hover { background: rgba(245,200,66,.28); }
+        .will-status { margin-top: .5rem; font-size: .75rem; color: rgba(255,255,255,.4); text-align: center; font-family: Arial, sans-serif; }
 
-        body.state-pending .timer-box,
-        body.state-pending .status-item.state-safe { color: #ff5c5c; }
+        /* Heir rows for multi-beneficiary */
+        .heir-rows { display: flex; flex-direction: column; gap: .5rem; margin-bottom: .5rem; }
+        .heir-row { display: flex; gap: .5rem; align-items: center; }
+        .heir-row input[type="text"] { flex: 1; background: rgba(255,255,255,.05); border: 1px solid rgba(245,200,66,.2); border-radius: .4rem; padding: .5rem .6rem; color: #fff; font-family: monospace; font-size: .75rem; outline: none; min-width: 0; }
+        .heir-row input[type="number"] { width: 3.5rem; background: rgba(255,255,255,.05); border: 1px solid rgba(245,200,66,.2); border-radius: .4rem; padding: .5rem .4rem; color: #F5C842; font-family: Arial, sans-serif; font-size: .8rem; font-weight: 700; text-align: center; outline: none; }
+        .heir-row .pct-label { color: rgba(255,255,255,.4); font-size: .75rem; font-family: Arial, sans-serif; }
+        .heir-row .remove-heir { width: 1.5rem; height: 1.5rem; border: 1px solid rgba(255,255,255,.2); border-radius: 50%; background: transparent; color: rgba(255,255,255,.4); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: .8rem; flex-shrink: 0; }
+        .heir-row .remove-heir:hover { color: #ff5c5c; border-color: #ff5c5c; }
+        .add-heir-btn { font-size: .75rem; color: rgba(245,200,66,.6); background: transparent; border: 1px dashed rgba(245,200,66,.3); border-radius: .4rem; padding: .35rem .7rem; cursor: pointer; font-family: Arial, sans-serif; transition: all .2s; }
+        .add-heir-btn:hover { color: #F5C842; border-color: rgba(245,200,66,.6); }
+        .pct-total { font-size: .72rem; font-family: Arial, sans-serif; color: rgba(255,255,255,.4); text-align: right; margin-top: .3rem; }
+        .pct-total.warn { color: #ff9f43; }
+        .pct-total.ok { color: #5fc87a; }
 
-        body.state-released .timer-box,
-        body.state-released .status-item.state-safe { color: #a7aca9; }
+        /* Letters / ghost messages */
+        .letter-list { display: flex; flex-direction: column; gap: .75rem; margin-bottom: .75rem; }
+        .letter-card { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: .6rem; padding: .75rem .9rem; }
+        .letter-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: .4rem; }
+        .letter-card-to { color: #F5C842; font-family: 'Caveat', cursive; font-size: 1.05rem; }
+        .letter-card-date { color: rgba(255,255,255,.4); font-size: .7rem; font-family: Arial, sans-serif; }
+        .letter-card-preview { color: rgba(255,255,255,.55); font-size: .8rem; font-family: Arial, sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .letter-card-actions { display: flex; gap: .4rem; margin-top: .5rem; }
+        .letter-action-btn { font-size: .7rem; font-family: Arial, sans-serif; padding: .25rem .6rem; border-radius: .3rem; border: 1px solid rgba(255,255,255,.15); background: transparent; color: rgba(255,255,255,.5); cursor: pointer; }
+        .letter-action-btn:hover { color: #fff; border-color: rgba(255,255,255,.4); }
+        .letter-action-btn.del:hover { color: #ff5c5c; border-color: #ff5c5c; }
+
+        /* New letter form */
+        .new-letter-form { background: rgba(245,200,66,.04); border: 1px solid rgba(245,200,66,.15); border-radius: .7rem; padding: .9rem; }
+        .new-letter-form .form-row { display: flex; gap: .5rem; margin-bottom: .5rem; }
+        .new-letter-form input { flex: 1; background: rgba(255,255,255,.05); border: 1px solid rgba(245,200,66,.2); border-radius: .4rem; padding: .5rem .7rem; color: #fff; font-family: Arial, sans-serif; font-size: .82rem; outline: none; min-width: 0; }
+        .new-letter-form input::placeholder { color: rgba(255,255,255,.25); }
+
+        /* State colours */
+        body.state-warning .timer-box, body.state-warning .status-item.state-safe { color: #ff9f43; }
+        body.state-pending .timer-box, body.state-pending .status-item.state-safe { color: #ff5c5c; }
+        body.state-released .timer-box, body.state-released .status-item.state-safe { color: #a7aca9; }
 
         .heartbeat svg { display: block; width: 100%; height: 100%; }
-
-        .heartbeat-line {
-            fill: none;
-            stroke: #F5C842;
-            stroke-width: 1.35;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            vector-effect: non-scaling-stroke;
-            stroke-dasharray: 1;
-            stroke-dashoffset: 1;
-            opacity: var(--heartbeat-opacity);
-            filter: drop-shadow(0 0 0.12rem rgba(245, 200, 66, .42));
-            animation: heartbeat-draw 1.8s linear infinite;
-            transition: opacity .25s ease, filter .25s ease, stroke .25s ease;
-        }
-
-        .heartbeat-echo {
-            fill: none;
-            stroke: #F5C842;
-            stroke-width: .8;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            vector-effect: non-scaling-stroke;
-            opacity: .13;
-            transform: translateY(2px);
-        }
-
-        @keyframes heartbeat-draw {
-            0% { stroke-dashoffset: 1; opacity: 0; }
-            10% { opacity: 1; }
-            75% { stroke-dashoffset: 0; opacity: 1; }
-            100% { stroke-dashoffset: -1; opacity: 0; }
-        }
+        .heartbeat-line { fill: none; stroke: #F5C842; stroke-width: 1.35; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; stroke-dasharray: 1; stroke-dashoffset: 1; opacity: var(--heartbeat-opacity); filter: drop-shadow(0 0 .12rem rgba(245,200,66,.42)); animation: heartbeat-draw 1.8s linear infinite; transition: opacity .25s ease, filter .25s ease, stroke .25s ease; }
+        .heartbeat-echo { fill: none; stroke: #F5C842; stroke-width: .8; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; opacity: .13; transform: translateY(2px); }
+        @keyframes heartbeat-draw { 0%{stroke-dashoffset:1;opacity:0} 10%{opacity:1} 75%{stroke-dashoffset:0;opacity:1} 100%{stroke-dashoffset:-1;opacity:0} }
 
         @media (max-width: 48rem) {
             .friends-text { position: relative; top: auto; left: auto; transform: none; width: 100%; min-height: 100svh; padding: 5.5rem 1rem 15rem; }
             .friends-line { font-size: clamp(1rem, 5vw, 1.5rem); white-space: normal; text-align: center; }
-            .friends-line:nth-child(n) { padding-left: 0; margin-bottom: 0.5rem; }
-            .timer-wrap { margin-top: 3rem; margin-right: 0; }
+            .friends-line:nth-child(n) { padding-left: 0; margin-bottom: .5rem; }
             #timer-display { font-size: 2.75rem; }
             nav { padding: 1rem; }
             .mm-wrap { bottom: 4.2rem; }
-            .mm-btn { padding: 0.6rem 1.5rem; font-size: 0.9rem; }
+            .mm-btn { padding: .6rem 1.5rem; font-size: .9rem; }
             .heartbeat { bottom: 11rem; height: 4.5rem; }
-            .status-bar { bottom: .65rem; width: 100%; }
-            .status-item { flex: 1; padding: .35rem .25rem; font-size: .55rem; letter-spacing: .05em; }
+            .status-bar { bottom: .65rem; right: 0; width: 100%; }
+            .status-item { flex: 1; padding: .35rem .15rem; font-size: .52rem; letter-spacing: .03em; }
         }
-
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
             .heartbeat-line { animation: none; stroke-dashoffset: 0; }
@@ -468,16 +164,13 @@
 
 <div class="heartbeat" role="img" aria-label="heartbeat">
     <svg viewBox="0 0 600 100" preserveAspectRatio="none">
-        <path id="heartbeat-path" class="heartbeat-line" pathLength="1"
-              d="M 0 50 H 200 L 235 50 L 250 25 L 265 78 L 285 8 L 305 88 L 325 50 H 600"/>
-        <path class="heartbeat-echo" pathLength="1"
-              d="M 0 50 H 200 L 235 50 L 250 25 L 265 78 L 285 8 L 305 88 L 325 50 H 600"/>
+        <path class="heartbeat-line" pathLength="1" d="M 0 50 H 200 L 235 50 L 250 25 L 265 78 L 285 8 L 305 88 L 325 50 H 600"/>
+        <path class="heartbeat-echo" pathLength="1" d="M 0 50 H 200 L 235 50 L 250 25 L 265 78 L 285 8 L 305 88 L 325 50 H 600"/>
     </svg>
 </div>
 
 <div class="bg">
-    <img class="bg-photo" src="friends.jpg" alt=""
-         onerror="this.style.display='none';document.getElementById('bf').style.display='block';">
+    <img class="bg-photo" src="friends.jpg" alt="" onerror="this.style.display='none';document.getElementById('bf').style.display='block';">
     <div id="bf" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#0a1a0e,#1b3a22);"></div>
     <div class="bg-overlay"></div>
     <div class="bg-fade"></div>
@@ -509,6 +202,7 @@
     <button class="status-item" type="button" data-sheet="assets">ASSETS</button>
     <button class="status-item" type="button" data-sheet="beneficiaries">BENEFICIARIES</button>
     <button class="status-item state-safe" type="button" data-sheet="protection">PROTECTED</button>
+    <button class="status-item" type="button" data-sheet="letters">LETTERS</button>
     <button class="status-item" type="button" data-sheet="about">ABOUT</button>
 </div>
 
@@ -516,345 +210,440 @@
     <section class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
         <div class="sheet-header">
             <h2 class="sheet-title" id="sheet-title"></h2>
-            <button class="sheet-close" id="sheet-close" type="button" aria-label="Close details">×</button>
+            <button class="sheet-close" id="sheet-close" type="button" aria-label="Close">×</button>
         </div>
         <div class="sheet-content" id="sheet-content"></div>
     </section>
 </div>
 
 <script>
-    const CONTRACT_ADDRESS = '0xBDB98082fC0C1ba918FD7460ECf96BF46A3abEAe';
-    const CONTRACT_ABI = [
-        {"inputs":[{"internalType":"address payable","name":"_heir","type":"address"}],"stateMutability":"payable","type":"constructor"},
-        {"inputs":[],"name":"heartbeat","outputs":[],"stateMutability":"nonpayable","type":"function"},
-        {"inputs":[],"name":"release","outputs":[],"stateMutability":"nonpayable","type":"function"},
-        {"inputs":[],"name":"getStatus","outputs":[{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"timeLeft","type":"uint256"},{"internalType":"bool","name":"isReleased","type":"bool"},{"internalType":"bool","name":"inGrace","type":"bool"}],"stateMutability":"view","type":"function"},
-        {"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
-        {"inputs":[],"name":"heir","outputs":[{"internalType":"address payable","name":"","type":"address"}],"stateMutability":"view","type":"function"},
-        {"inputs":[{"internalType":"address payable","name":"_newHeir","type":"address"}],"name":"setHeir","outputs":[],"stateMutability":"nonpayable","type":"function"},
-        {"stateMutability":"payable","type":"receive"}
-    ];
+const CONTRACT_ADDRESS = '0xBDB98082fC0C1ba918FD7460ECf96BF46A3abEAe';
+const CONTRACT_ABI = [
+    {"inputs":[{"internalType":"address payable","name":"_heir","type":"address"}],"stateMutability":"payable","type":"constructor"},
+    {"inputs":[],"name":"heartbeat","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[],"name":"release","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[],"name":"getStatus","outputs":[{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"timeLeft","type":"uint256"},{"internalType":"bool","name":"isReleased","type":"bool"},{"internalType":"bool","name":"inGrace","type":"bool"}],"stateMutability":"view","type":"function"},
+    {"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+    {"inputs":[],"name":"heir","outputs":[{"internalType":"address payable","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+    {"stateMutability":"payable","type":"receive"}
+];
 
-    let contract = null;
-    let contractReadOnly = null;
-    let userAddress = null;
-    let pollInterval = null;
-    let walletConnected = false;
-    const connectButtonMarkup = document.getElementById('mm-btn').innerHTML;
+let contract = null, contractReadOnly = null, userAddress = null, pollInterval = null;
+const connectButtonMarkup = document.getElementById('mm-btn').innerHTML;
 
-    const sheetData = {
-        assets: { title: 'Your Assets', content: `` },
-        beneficiaries: { title: 'Beneficiaries', content: `` },
-        protection: {
-            title: 'Protection Status',
-            content: `
+/* ── localStorage keys ─────────────────────────── */
+const WILL_KEY  = 'lv_will_v2';
+const HEIRS_KEY = 'lv_heirs_v2';
+const LTRS_KEY  = 'lv_letters_v2';
+
+/* ── Will helpers ──────────────────────────────── */
+function loadWill() {
+    try { return JSON.parse(localStorage.getItem(WILL_KEY)) || {}; } catch { return {}; }
+}
+function saveWill(data) { localStorage.setItem(WILL_KEY, JSON.stringify(data)); }
+
+/* ── Heirs helpers (multi %) ───────────────────── */
+function loadHeirs() {
+    try { return JSON.parse(localStorage.getItem(HEIRS_KEY)) || [{ name: '', pct: 100 }]; } catch { return [{ name: '', pct: 100 }]; }
+}
+function saveHeirs(heirs) { localStorage.setItem(HEIRS_KEY, JSON.stringify(heirs)); }
+
+/* ── Letters helpers ───────────────────────────── */
+function loadLetters() {
+    try { return JSON.parse(localStorage.getItem(LTRS_KEY)) || []; } catch { return []; }
+}
+function saveLetters(letters) { localStorage.setItem(LTRS_KEY, JSON.stringify(letters)); }
+
+/* ── Sheet data ────────────────────────────────── */
+const sheetData = {
+    assets: { title: 'Your Assets', content: '' },
+    protection: {
+        title: 'Protection Status',
+        content: `
         <div class="sheet-row"><span>Heartbeat window</span><strong>60 seconds</strong></div>
         <div class="sheet-row"><span>Grace period</span><strong>10 seconds</strong></div>
         <div class="sheet-row"><span>Transfer status</span><strong id="sheet-transfer-state">Not scheduled</strong></div>`
-        },
-        about: {
-            title: 'About LegacyVault',
-            content: `
-        <div class="sheet-row"><span>서비스</span><strong>블록체인 기반 디지털 유언장</strong></div>
+    },
+    about: {
+        title: 'About LegacyVault',
+        content: `
+        <div class="sheet-row"><span>서비스</span><strong>블록체인 기반 디지털 유산 관리</strong></div>
         <div class="sheet-row" style="display:block;padding:.9rem 0;border-bottom:1px solid rgba(255,255,255,.08)"><p style="color:rgba(255,255,255,.75);font-size:.88rem;line-height:1.75">LegacyVault는 이더리움 스마트 컨트랙트를 통해 디지털 자산의 상속을 자동화합니다. 사용자가 주기적으로 생존 확인(heartbeat)을 하지 않으면, 미리 지정된 수혜자에게 자산이 자동으로 이전됩니다.</p></div>
-        <div class="sheet-row" style="display:block;padding:.9rem 0;border-bottom:1px solid rgba(255,255,255,.08)"><p style="color:rgba(255,255,255,.75);font-size:.88rem;line-height:1.75">중앙화된 기관 없이, 신뢰할 수 없는 환경에서도 유언을 집행할 수 있는 탈중앙화 솔루션입니다.</p></div>
+        <div class="sheet-row" style="display:block;padding:.9rem 0;border-bottom:1px solid rgba(255,255,255,.08)"><p style="color:rgba(255,255,255,.75);font-size:.88rem;line-height:1.75">유언장 작성, 타임캡슐 편지, 다수 수혜자 분배 의향을 하나의 공간에서 관리할 수 있습니다.</p></div>
         <div class="sheet-row"><span>기술 스택</span><strong>Ethereum · Solidity · MetaMask</strong></div>
         <div class="sheet-row"><span>제작자</span><strong>SWIMMMMY</strong></div>`
-        }
-    };
-
-    function setHeartbeatBpm(bpm) {
-        const heartbeat = document.querySelector('.heartbeat');
-        if (heartbeat.dataset.bpm === String(bpm)) return;
-        const line = document.querySelector('.heartbeat-line');
-        heartbeat.dataset.bpm = String(bpm);
-        line.style.animationDuration = `${120 / bpm}s`;
     }
-    setHeartbeatBpm(80);
+};
 
-    function setupInteractiveHeartbeat() {
-        const heartbeat = document.querySelector('.heartbeat');
-        let frame;
-        document.addEventListener('pointermove', (event) => {
-            cancelAnimationFrame(frame);
-            frame = requestAnimationFrame(() => {
-                const bounds = heartbeat.getBoundingClientRect();
-                const distance = Math.max(bounds.top - event.clientY, event.clientY - bounds.bottom, 0);
-                const isNear = distance < 90;
-                const x = Math.min(Math.max(event.clientX - bounds.left, 0), bounds.width);
-                const y = Math.min(Math.max(event.clientY - bounds.top, 0), bounds.height);
-                heartbeat.style.setProperty('--cursor-x', `${x}px`);
-                heartbeat.style.setProperty('--cursor-y', `${y}px`);
-                heartbeat.style.setProperty('--heartbeat-opacity', isNear ? '.95' : '.72');
-                heartbeat.classList.toggle('is-interactive', isNear);
-                setHeartbeatBpm(isNear ? 105 : 80);
-            });
+/* ── Build beneficiaries sheet HTML ────────────── */
+function buildBeneficiariesContent(heirAddr, balPOL) {
+    const will  = loadWill();
+    const heirs = loadHeirs();
+
+    const heirRowsHTML = heirs.map((h, i) => `
+        <div class="heir-row" id="heir-row-${i}">
+            <input type="text" placeholder="이름 또는 관계 (예: 큰딸)" value="${h.name || ''}"
+                oninput="updateHeirField(${i},'name',this.value)" style="font-family:Arial,sans-serif;">
+            <input type="number" min="0" max="100" value="${h.pct ?? ''}"
+                oninput="updateHeirField(${i},'pct',+this.value)" placeholder="%" >
+            <span class="pct-label">%</span>
+            <button class="remove-heir" onclick="removeHeirRow(${i})" title="삭제">×</button>
+        </div>`).join('');
+
+    const total = heirs.reduce((s, h) => s + (Number(h.pct) || 0), 0);
+    const totalColor = total === 100 ? 'ok' : 'warn';
+    const totalText  = total === 100 ? '✓ 합계 100%' : `합계 ${total}% (100%가 되어야 해요)`;
+
+    return `
+    <div class="sheet-row"><span>Current heir</span><strong style="font-size:.75rem;word-break:break-all">${heirAddr}</strong></div>
+    <div class="sheet-row"><span>Locked amount</span><strong style="color:#F5C842">${balPOL} POL</strong></div>
+
+    <div class="section-label" style="margin-top:1.4rem">📜 유언장</div>
+
+    <div class="section-label" style="margin-top:.8rem">재산 분배 의향</div>
+    <div class="heir-rows" id="heir-rows">${heirRowsHTML}</div>
+    <button class="add-heir-btn" onclick="addHeirRow()">+ 수혜자 추가</button>
+    <div class="pct-total ${totalColor}" id="pct-total">${totalText}</div>
+
+    <div class="section-label">수혜자에게 전하는 말</div>
+    <textarea class="will-textarea" id="will-msg" placeholder="소중한 사람에게 남기는 한 마디...">${will.msg || ''}</textarea>
+
+    <div class="section-label">마지막 바람</div>
+    <textarea class="will-textarea" id="will-wish" placeholder="내가 가고 난 후 바라는 것들...">${will.wish || ''}</textarea>
+
+    <button class="will-save-btn" onclick="saveWillData()">저장하기</button>
+    <div class="will-status" id="will-status"></div>`;
+}
+
+/* ── Build letters sheet HTML ──────────────────── */
+function buildLettersContent() {
+    const letters = loadLetters();
+    const listHTML = letters.length ? letters.map((l, i) => `
+        <div class="letter-card">
+            <div class="letter-card-header">
+                <span class="letter-card-to">To. ${l.to || '(이름 없음)'}</span>
+                <span class="letter-card-date">${l.date ? '📅 ' + l.date : '날짜 미정'}</span>
+            </div>
+            <div class="letter-card-preview">${l.body || '(내용 없음)'}</div>
+            <div class="letter-card-actions">
+                <button class="letter-action-btn" onclick="editLetter(${i})">수정</button>
+                <button class="letter-action-btn del" onclick="deleteLetter(${i})">삭제</button>
+            </div>
+        </div>`).join('') : `<p style="color:rgba(255,255,255,.3);font-size:.85rem;text-align:center;padding:1.2rem 0">아직 작성된 편지가 없어요</p>`;
+
+    return `
+    <p style="color:rgba(255,255,255,.45);font-size:.8rem;margin-bottom:1rem;line-height:1.6">내가 떠난 뒤 특정 날짜에 소중한 사람에게 전달될 편지를 남겨두세요.</p>
+    <div class="letter-list">${listHTML}</div>
+
+    <div class="section-label">새 편지 쓰기</div>
+    <div class="new-letter-form">
+        <div class="form-row">
+            <input type="text" id="letter-to" placeholder="받는 사람 (예: 엄마, 딸에게)" style="flex:1.2">
+            <input type="date" id="letter-date" style="flex:1;color-scheme:dark">
+        </div>
+        <textarea class="will-textarea" id="letter-body" placeholder="마음속 말들을 자유롭게 써주세요..." style="min-height:6rem"></textarea>
+        <button class="will-save-btn" onclick="saveLetter()">편지 저장</button>
+        <div class="will-status" id="letter-status"></div>
+    </div>`;
+}
+
+/* ── Heir row mutations ────────────────────────── */
+window.updateHeirField = function(i, field, val) {
+    const heirs = loadHeirs();
+    heirs[i][field] = val;
+    saveHeirs(heirs);
+    // update total display only
+    const total = heirs.reduce((s, h) => s + (Number(h.pct) || 0), 0);
+    const el = document.getElementById('pct-total');
+    if (el) {
+        el.className = 'pct-total ' + (total === 100 ? 'ok' : 'warn');
+        el.textContent = total === 100 ? '✓ 합계 100%' : `합계 ${total}% (100%가 되어야 해요)`;
+    }
+};
+
+window.addHeirRow = function() {
+    const heirs = loadHeirs();
+    heirs.push({ name: '', pct: 0 });
+    saveHeirs(heirs);
+    const container = document.getElementById('heir-rows');
+    if (!container) return;
+    const i = heirs.length - 1;
+    const div = document.createElement('div');
+    div.className = 'heir-row';
+    div.id = `heir-row-${i}`;
+    div.innerHTML = `
+        <input type="text" placeholder="이름 또는 관계" value=""
+            oninput="updateHeirField(${i},'name',this.value)" style="font-family:Arial,sans-serif;">
+        <input type="number" min="0" max="100" value="0"
+            oninput="updateHeirField(${i},'pct',+this.value)" placeholder="%">
+        <span class="pct-label">%</span>
+        <button class="remove-heir" onclick="removeHeirRow(${i})" title="삭제">×</button>`;
+    container.appendChild(div);
+};
+
+window.removeHeirRow = function(i) {
+    const heirs = loadHeirs();
+    if (heirs.length <= 1) return;
+    heirs.splice(i, 1);
+    saveHeirs(heirs);
+    // re-render beneficiaries panel
+    const sc = document.getElementById('sheet-content');
+    if (sc && document.getElementById('heir-rows')) {
+        // partial re-render of heir section
+        const container = document.getElementById('heir-rows');
+        container.innerHTML = heirs.map((h, idx) => `
+            <div class="heir-row" id="heir-row-${idx}">
+                <input type="text" placeholder="이름 또는 관계" value="${h.name || ''}"
+                    oninput="updateHeirField(${idx},'name',this.value)" style="font-family:Arial,sans-serif;">
+                <input type="number" min="0" max="100" value="${h.pct ?? ''}"
+                    oninput="updateHeirField(${idx},'pct',+this.value)" placeholder="%">
+                <span class="pct-label">%</span>
+                <button class="remove-heir" onclick="removeHeirRow(${idx})" title="삭제">×</button>
+            </div>`).join('');
+        updateHeirField(0, 'name', heirs[0].name); // trigger total recalc
+    }
+};
+
+/* ── Will save ─────────────────────────────────── */
+window.saveWillData = function() {
+    const msg  = document.getElementById('will-msg')?.value  || '';
+    const wish = document.getElementById('will-wish')?.value || '';
+    saveWill({ msg, wish, savedAt: new Date().toISOString() });
+    const el = document.getElementById('will-status');
+    if (el) { el.textContent = '✓ 저장됐어요'; el.style.color = '#F5C842'; setTimeout(() => { el.textContent = ''; }, 2000); }
+};
+
+/* ── Letter save/edit/delete ───────────────────── */
+window.saveLetter = function() {
+    const to   = document.getElementById('letter-to')?.value.trim()   || '';
+    const date = document.getElementById('letter-date')?.value         || '';
+    const body = document.getElementById('letter-body')?.value.trim()  || '';
+    if (!body) { const s = document.getElementById('letter-status'); if (s) { s.textContent = '내용을 입력해주세요'; s.style.color='#ff5c5c'; } return; }
+    const letters = loadLetters();
+    const editIdx = window._editingLetterIdx;
+    if (editIdx !== undefined) {
+        letters[editIdx] = { to, date, body };
+        delete window._editingLetterIdx;
+    } else {
+        letters.push({ to, date, body });
+    }
+    saveLetters(letters);
+    document.getElementById('sheet-content').innerHTML = buildLettersContent();
+    const s = document.getElementById('letter-status');
+    if (s) { s.textContent = '✓ 편지가 저장됐어요'; s.style.color='#F5C842'; }
+};
+
+window.editLetter = function(i) {
+    const letters = loadLetters();
+    const l = letters[i];
+    window._editingLetterIdx = i;
+    const toEl   = document.getElementById('letter-to');
+    const dateEl = document.getElementById('letter-date');
+    const bodyEl = document.getElementById('letter-body');
+    if (toEl)   toEl.value   = l.to   || '';
+    if (dateEl) dateEl.value = l.date || '';
+    if (bodyEl) bodyEl.value = l.body || '';
+    bodyEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+window.deleteLetter = function(i) {
+    const letters = loadLetters();
+    letters.splice(i, 1);
+    saveLetters(letters);
+    document.getElementById('sheet-content').innerHTML = buildLettersContent();
+};
+
+/* ── Heartbeat visual ──────────────────────────── */
+function setHeartbeatBpm(bpm) {
+    const hb = document.querySelector('.heartbeat');
+    if (hb.dataset.bpm === String(bpm)) return;
+    hb.dataset.bpm = String(bpm);
+    document.querySelector('.heartbeat-line').style.animationDuration = `${120/bpm}s`;
+}
+setHeartbeatBpm(80);
+
+function setupInteractiveHeartbeat() {
+    const hb = document.querySelector('.heartbeat');
+    let frame;
+    document.addEventListener('pointermove', (e) => {
+        cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(() => {
+            const b = hb.getBoundingClientRect();
+            const dist = Math.max(b.top - e.clientY, e.clientY - b.bottom, 0);
+            const isNear = dist < 90;
+            hb.style.setProperty('--cursor-x', `${Math.min(Math.max(e.clientX-b.left,0),b.width)}px`);
+            hb.style.setProperty('--cursor-y', `${Math.min(Math.max(e.clientY-b.top,0),b.height)}px`);
+            hb.style.setProperty('--heartbeat-opacity', isNear ? '.95' : '.72');
+            hb.classList.toggle('is-interactive', isNear);
+            setHeartbeatBpm(isNear ? 105 : 80);
         });
-        document.addEventListener('pointerleave', () => {
-            heartbeat.classList.remove('is-interactive');
-            heartbeat.style.setProperty('--heartbeat-opacity', '.72');
-            setHeartbeatBpm(80);
-        });
-    }
+    });
+    document.addEventListener('pointerleave', () => {
+        document.querySelector('.heartbeat').classList.remove('is-interactive');
+        document.querySelector('.heartbeat').style.setProperty('--heartbeat-opacity','.72');
+        setHeartbeatBpm(80);
+    });
+}
 
-    async function pollContractStatus() {
-        if (!contractReadOnly) return;
-        try {
-            const [balance, timeLeft, isReleased, inGrace] = await contractReadOnly.getStatus();
-            const display = document.querySelector('#timer-display');
-            const stateLabel = document.querySelector('#timer-state');
-            const dateLabel = document.querySelector('#timer-date');
-            const btn = document.getElementById('mm-btn');
-            const copy = document.getElementById('checkin-copy');
-            const secs = Number(timeLeft);
-            const bal = ethers.formatEther(balance);
-
-            document.body.classList.remove('state-warning', 'state-pending', 'state-released');
-
-            if (isReleased) {
-                document.body.classList.add('state-released');
-                stateLabel.textContent = 'LEGACY RELEASED';
-                display.textContent = 'TRANSFER COMPLETE';
-                dateLabel.textContent = `${bal} POL -> Heir`;
-                btn.textContent = 'RELEASED';
-                btn.disabled = true;
-                clearInterval(pollInterval);
-            } else if (inGrace) {
-                document.body.classList.add('state-pending');
-                stateLabel.textContent = 'HEARTBEAT EXPIRED';
-                display.textContent = 'TRANSFER PENDING';
-                dateLabel.textContent = 'Grace period active';
-                const ownerAddr = await contractReadOnly.owner();
-                if (userAddress && userAddress.toLowerCase() !== ownerAddr.toLowerCase()) {
-                    btn.textContent = 'RELEASE ASSETS';
-                    btn.onclick = releaseAssets;
-                    btn.disabled = false;
-                    copy.textContent = 'Grace period - claim inheritance';
-                }
-            } else if (secs <= 5) {
-                document.body.classList.add('state-warning');
-                stateLabel.textContent = 'CHECK IN SOON';
-                display.textContent = `${secs} SEC LEFT`;
-                dateLabel.textContent = `Resets in ${secs}s`;
-            } else {
-                stateLabel.textContent = `YOU'RE STILL WITH US`;
-                display.textContent = `${secs} SEC LEFT`;
-                dateLabel.textContent = `${bal} POL secured · Resets in ${secs}s`;
-            }
-        } catch (e) {
-            console.error('poll error', e);
-        }
-    }
-
-    async function confirmHeartbeat() {
-        if (!contract) return;
-        const btn = document.getElementById('mm-btn');
-        const heartbeatEl = document.querySelector('.heartbeat');
-        try {
-            btn.textContent = 'CONFIRMING...';
-            btn.disabled = true;
-            const tx = await contract.heartbeat();
-            await tx.wait();
-            heartbeatEl.classList.remove('confirmed');
-            void heartbeatEl.offsetWidth;
-            heartbeatEl.classList.add('confirmed');
-            btn.textContent = 'HEARTBEAT CONFIRMED';
-            document.getElementById('checkin-copy').textContent = 'Resets in 60s';
-            setTimeout(() => {
-                btn.textContent = `I'M STILL HERE`;
-                btn.disabled = false;
-                document.getElementById('checkin-copy').textContent = 'Extend for another 60 seconds';
-                heartbeatEl.classList.remove('confirmed');
-            }, 1800);
-            pollContractStatus();
-        } catch (e) {
-            btn.textContent = `I'M STILL HERE`;
-            btn.disabled = false;
-            if (e.code !== 4001) alert('트랜잭션 실패: ' + (e.shortMessage || e.message));
-        }
-    }
-
-    async function releaseAssets() {
-        if (!contract) return;
-        const btn = document.getElementById('mm-btn');
-        try {
-            btn.textContent = 'RELEASING...';
-            btn.disabled = true;
-            const tx = await contract.release();
-            await tx.wait();
-            pollContractStatus();
-        } catch (e) {
-            btn.textContent = 'RELEASE ASSETS';
-            btn.disabled = false;
-            if (e.code !== 4001) alert('트랜잭션 실패: ' + (e.shortMessage || e.message));
-        }
-    }
-
-    function showTimer() {
-        document.querySelector('.timer-wrap').classList.add('visible');
-    }
-
-    async function setConnectedState(addr) {
-        walletConnected = true;
-        userAddress = addr;
-        const btn = document.getElementById('mm-btn');
+/* ── Contract polling ──────────────────────────── */
+async function pollContractStatus() {
+    if (!contractReadOnly) return;
+    try {
+        const [balance, timeLeft, isReleased, inGrace] = await contractReadOnly.getStatus();
+        const secs = Number(timeLeft);
+        const bal  = ethers.formatEther(balance);
+        const display    = document.querySelector('#timer-display');
+        const stateLabel = document.querySelector('#timer-state');
+        const dateLabel  = document.querySelector('#timer-date');
+        const btn  = document.getElementById('mm-btn');
         const copy = document.getElementById('checkin-copy');
+        document.body.classList.remove('state-warning','state-pending','state-released');
+        if (isReleased) {
+            document.body.classList.add('state-released');
+            stateLabel.textContent = 'LEGACY RELEASED'; display.textContent = 'TRANSFER COMPLETE'; dateLabel.textContent = `${bal} POL -> Heir`;
+            btn.textContent = 'RELEASED'; btn.disabled = true; clearInterval(pollInterval);
+        } else if (inGrace) {
+            document.body.classList.add('state-pending');
+            stateLabel.textContent = 'HEARTBEAT EXPIRED'; display.textContent = 'TRANSFER PENDING'; dateLabel.textContent = 'Grace period active';
+            const ownerAddr = await contractReadOnly.owner();
+            if (userAddress && userAddress.toLowerCase() !== ownerAddr.toLowerCase()) {
+                btn.textContent = 'RELEASE ASSETS'; btn.onclick = releaseAssets; btn.disabled = false; copy.textContent = 'Grace period - claim inheritance';
+            }
+        } else if (secs <= 5) {
+            document.body.classList.add('state-warning');
+            stateLabel.textContent = 'CHECK IN SOON'; display.textContent = `${secs} SEC LEFT`; dateLabel.textContent = `Resets in ${secs}s`;
+        } else {
+            stateLabel.textContent = `YOU'RE STILL WITH US`; display.textContent = `${secs} SEC LEFT`; dateLabel.textContent = `${bal} POL secured · Resets in ${secs}s`;
+        }
+    } catch(e) { console.error('poll error', e); }
+}
 
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const signerObj = await provider.getSigner();
-        contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signerObj);
-        contractReadOnly = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+async function confirmHeartbeat() {
+    if (!contract) return;
+    const btn = document.getElementById('mm-btn');
+    const hbEl = document.querySelector('.heartbeat');
+    try {
+        btn.textContent = 'CONFIRMING...'; btn.disabled = true;
+        const tx = await contract.heartbeat(); await tx.wait();
+        hbEl.classList.remove('confirmed'); void hbEl.offsetWidth; hbEl.classList.add('confirmed');
+        btn.textContent = 'HEARTBEAT CONFIRMED'; document.getElementById('checkin-copy').textContent = 'Resets in 60s';
+        setTimeout(() => { btn.textContent = `I'M STILL HERE`; btn.disabled = false; document.getElementById('checkin-copy').textContent = 'Extend for another 60 seconds'; hbEl.classList.remove('confirmed'); }, 1800);
+        pollContractStatus();
+    } catch(e) { btn.textContent = `I'M STILL HERE`; btn.disabled = false; if(e.code!==4001) alert('트랜잭션 실패: '+(e.shortMessage||e.message)); }
+}
 
-        const ownerAddr = await contractReadOnly.owner();
-        const heirAddr = await contractReadOnly.heir();
-        const isOwner = addr.toLowerCase() === ownerAddr.toLowerCase();
+async function releaseAssets() {
+    if (!contract) return;
+    const btn = document.getElementById('mm-btn');
+    try {
+        btn.textContent = 'RELEASING...'; btn.disabled = true;
+        const tx = await contract.release(); await tx.wait(); pollContractStatus();
+    } catch(e) { btn.textContent = 'RELEASE ASSETS'; btn.disabled = false; if(e.code!==4001) alert('트랜잭션 실패: '+(e.shortMessage||e.message)); }
+}
 
-        const fmt = a => `${a.slice(0,6)}...${a.slice(-4)}`;
-        const [balance] = await contractReadOnly.getStatus();
-        const balPOL = parseFloat(ethers.formatEther(balance)).toFixed(4);
+async function setConnectedState(addr) {
+    userAddress = addr;
+    const btn  = document.getElementById('mm-btn');
+    const copy = document.getElementById('checkin-copy');
+    const provider  = new ethers.BrowserProvider(window.ethereum);
+    const signerObj = await provider.getSigner();
+    contract          = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signerObj);
+    contractReadOnly  = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+    const ownerAddr   = await contractReadOnly.owner();
+    const heirAddr    = await contractReadOnly.heir();
+    const isOwner     = addr.toLowerCase() === ownerAddr.toLowerCase();
+    const fmt         = a => `${a.slice(0,6)}...${a.slice(-4)}`;
+    const [balance]   = await contractReadOnly.getStatus();
+    const balPOL      = parseFloat(ethers.formatEther(balance)).toFixed(4);
 
-        sheetData.assets.content = `
+    sheetData.assets.content = `
         <div class="sheet-row"><span>Owner wallet</span><strong>${fmt(ownerAddr)}</strong></div>
         <div class="sheet-row"><span>Contract balance</span><strong style="color:#F5C842">${balPOL} POL</strong></div>
         <div class="sheet-row"><span>Contract address</span><strong>${fmt(CONTRACT_ADDRESS)}</strong></div>
         <div class="sheet-row"><span>Network</span><strong>Polygon Amoy Testnet</strong></div>`;
 
-        sheetData.beneficiaries.content = `
-        <div class="sheet-row"><span>Current heir</span><strong style="font-size:.75rem;word-break:break-all">${heirAddr}</strong></div>
-        <div class="sheet-row"><span>Locked amount</span><strong style="color:#F5C842">${balPOL} POL</strong></div>
-        <div style="padding:.9rem 0;border-bottom:1px solid rgba(255,255,255,.08)">
-            <div style="color:rgba(255,255,255,.5);font-size:.72rem;letter-spacing:.08em;margin-bottom:.6rem">CHANGE HEIR ADDRESS</div>
-            <input id="heir-input" type="text" placeholder="0x..." style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(245,200,66,.3);border-radius:.5rem;padding:.6rem .8rem;color:#fff;font-family:monospace;font-size:.78rem;outline:none;" />
-            <button onclick="updateHeir()" style="margin-top:.6rem;width:100%;padding:.65rem;border-radius:.5rem;border:none;background:#F5C842;color:#0a1a0e;font-weight:700;font-size:.85rem;cursor:pointer;">SET HEIR</button>
-            <div id="heir-status" style="margin-top:.5rem;font-size:.75rem;color:rgba(255,255,255,.5);text-align:center;"></div>
-        </div>`;
+    sheetData.beneficiaries = {
+        title: 'Beneficiaries',
+        content: buildBeneficiariesContent(heirAddr, balPOL)
+    };
+    sheetData.letters = {
+        title: 'Letters',
+        content: buildLettersContent()
+    };
 
-        showTimer();
-        document.querySelector('.status-bar').style.cssText += 'opacity:1;visibility:visible;';
-        btn.classList.remove('connected');
+    document.querySelector('.timer-wrap').classList.add('visible');
+    document.querySelector('.status-bar').style.cssText += 'opacity:1;visibility:visible;';
+    btn.classList.remove('connected');
 
-        if (isOwner) {
-            btn.innerHTML = 'STARTING TIMER...';
-            btn.disabled = true;
-            copy.textContent = 'Resetting timer...';
-            try {
-                const tx = await contract.heartbeat();
-                btn.innerHTML = 'CONFIRMING...';
-                await tx.wait();
-            } catch(e) {}
-            btn.innerHTML = `I'M STILL HERE`;
-            btn.onclick = confirmHeartbeat;
-            btn.disabled = false;
-            copy.textContent = 'Extend for another 60 seconds';
-        } else {
-            btn.innerHTML = `HEIR CONNECTED`;
-            btn.disabled = true;
-            copy.textContent = 'Waiting for heartbeat to expire...';
-        }
-
-        pollContractStatus();
-        pollInterval = setInterval(pollContractStatus, 2000);
+    if (isOwner) {
+        btn.innerHTML = 'STARTING TIMER...'; btn.disabled = true; copy.textContent = 'Resetting timer...';
+        try { const tx = await contract.heartbeat(); btn.innerHTML = 'CONFIRMING...'; await tx.wait(); } catch(e) {}
+        btn.innerHTML = `I'M STILL HERE`; btn.onclick = confirmHeartbeat; btn.disabled = false; copy.textContent = 'Extend for another 60 seconds';
+    } else {
+        btn.innerHTML = `HEIR CONNECTED`; btn.disabled = true; copy.textContent = 'Waiting for heartbeat to expire...';
     }
+    pollContractStatus();
+    pollInterval = setInterval(pollContractStatus, 2000);
+}
 
-    function setDisconnectedState() {
-        walletConnected = false;
-        clearInterval(pollInterval);
+function setDisconnectedState() {
+    clearInterval(pollInterval);
+    const btn = document.getElementById('mm-btn');
+    btn.innerHTML = connectButtonMarkup; btn.onclick = connectWallet; btn.disabled = false;
+    document.getElementById('checkin-copy').textContent = 'MetaMask connection required';
+}
+
+/* ── Sheet open/close ──────────────────────────── */
+function openSheet(type) {
+    // Re-build dynamic sheets each time
+    if (type === 'beneficiaries' && sheetData.beneficiaries) {
+        // already built
+    } else if (type === 'letters') {
+        if (!sheetData.letters) sheetData.letters = { title: 'Letters', content: buildLettersContent() };
+        sheetData.letters.content = buildLettersContent();
+    }
+    const d = sheetData[type];
+    if (!d) return;
+    document.getElementById('sheet-title').textContent   = d.title;
+    document.getElementById('sheet-content').innerHTML   = d.content;
+    const sheet = document.getElementById('bottom-sheet');
+    sheet.classList.add('open'); sheet.setAttribute('aria-hidden','false');
+    document.getElementById('sheet-close').focus();
+}
+function closeSheet() {
+    const sheet = document.getElementById('bottom-sheet');
+    sheet.classList.remove('open'); sheet.setAttribute('aria-hidden','true');
+}
+
+/* ── Connect wallet ────────────────────────────── */
+async function connectWallet() {
+    if (typeof window.ethereum !== 'undefined') {
         const btn = document.getElementById('mm-btn');
-        btn.innerHTML = connectButtonMarkup;
-        btn.onclick = connectWallet;
-        btn.disabled = false;
-        document.getElementById('checkin-copy').textContent = 'MetaMask connection required';
-    }
-
-    window.addEventListener('load', function () {
-        setupInteractiveHeartbeat();
-        document.querySelectorAll('[data-sheet]').forEach((button) => {
-            button.addEventListener('click', () => openSheet(button.dataset.sheet));
-        });
-        document.getElementById('sheet-close').addEventListener('click', closeSheet);
-        document.getElementById('bottom-sheet').addEventListener('click', (event) => {
-            if (event.target.id === 'bottom-sheet') closeSheet();
-        });
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape') closeSheet();
-        });
-        if (window.ethereum) {
-            window.ethereum.request({method: 'eth_accounts'}).then((accounts) => {
-                if (accounts[0]) setConnectedState(accounts[0]);
-            });
-            window.ethereum.on('accountsChanged', (accounts) => {
-                if (accounts[0]) setConnectedState(accounts[0]);
-                else setDisconnectedState();
-            });
-        }
-    });
-
-    function openSheet(type) {
-        const sheet = document.getElementById('bottom-sheet');
-        document.getElementById('sheet-title').textContent = sheetData[type].title;
-        document.getElementById('sheet-content').innerHTML = sheetData[type].content;
-        sheet.classList.add('open');
-        sheet.setAttribute('aria-hidden', 'false');
-        document.getElementById('sheet-close').focus();
-    }
-
-    function closeSheet() {
-        const sheet = document.getElementById('bottom-sheet');
-        sheet.classList.remove('open');
-        sheet.setAttribute('aria-hidden', 'true');
-    }
-
-    async function connectWallet() {
-        if (typeof window.ethereum !== 'undefined') {
-            const btn = document.getElementById('mm-btn');
-            btn.innerHTML = 'CONNECTING...';
-            btn.disabled = true;
-            try {
-                const accounts = await window.ethereum.request({method: 'eth_requestAccounts'});
-                await setConnectedState(accounts[0]);
-                btn.disabled = false;
-            } catch (err) {
-                setDisconnectedState();
-                if (err.code === 4001) alert('연결을 취소했어요.');
-            }
-        } else {
-            document.getElementById('demo-modal-backdrop').classList.add('open');
-        }
-    }
-
-    async function updateHeir() {
-        const input = document.getElementById('heir-input');
-        const status = document.getElementById('heir-status');
-        const newHeir = input.value.trim();
-        if (!newHeir.match(/^0x[0-9a-fA-F]{40}$/)) {
-            status.style.color = '#ff5c5c';
-            status.textContent = '올바른 지갑 주소를 입력해주세요';
-            return;
-        }
+        btn.innerHTML = 'CONNECTING...'; btn.disabled = true;
         try {
-            status.style.color = 'rgba(255,255,255,.5)';
-            status.textContent = '트랜잭션 요청 중...';
-            const tx = await contract.setHeir(newHeir);
-            status.textContent = '확인 중...';
-            await tx.wait();
-            status.style.color = '#F5C842';
-            status.textContent = '수혜자 주소 변경 완료!';
-        } catch(e) {
-            status.style.color = '#ff5c5c';
-            status.textContent = e.code === 4001 ? '취소됨' : '실패: ' + (e.shortMessage || e.message);
-        }
+            const accounts = await window.ethereum.request({method:'eth_requestAccounts'});
+            await setConnectedState(accounts[0]); btn.disabled = false;
+        } catch(err) { setDisconnectedState(); if(err.code===4001) alert('연결을 취소했어요.'); }
+    } else {
+        document.getElementById('demo-modal-backdrop').classList.add('open');
     }
+}
 
-    function closeDemoModal() {
-        document.getElementById('demo-modal-backdrop').classList.remove('open');
+/* ── Init ──────────────────────────────────────── */
+window.addEventListener('load', () => {
+    setupInteractiveHeartbeat();
+    document.querySelectorAll('[data-sheet]').forEach(b => b.addEventListener('click', () => openSheet(b.dataset.sheet)));
+    document.getElementById('sheet-close').addEventListener('click', closeSheet);
+    document.getElementById('bottom-sheet').addEventListener('click', e => { if(e.target.id==='bottom-sheet') closeSheet(); });
+    document.addEventListener('keydown', e => { if(e.key==='Escape') closeSheet(); });
+    if (window.ethereum) {
+        window.ethereum.request({method:'eth_accounts'}).then(a => { if(a[0]) setConnectedState(a[0]); });
+        window.ethereum.on('accountsChanged', a => { if(a[0]) setConnectedState(a[0]); else setDisconnectedState(); });
     }
-
-    function demoConnect() {
-        closeDemoModal();
-        setConnectedState('0x71C3b8a2F4e1d9c0A7B5E2D3F6C8A9C2E1B4D7F0');
-    }
+});
 </script>
 
+<!-- MetaMask modal -->
 <div id="demo-modal-backdrop" style="position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s">
     <div style="width:22rem;background:#1b1f2e;border-radius:1.25rem;padding:1.75rem 1.5rem 1.5rem;box-shadow:0 1.5rem 4rem rgba(0,0,0,.6);text-align:center">
         <svg viewBox="0 0 35 33" style="width:3.5rem;height:3.5rem;margin:0 auto 1rem;display:block">
@@ -869,21 +658,12 @@
         </div>
     </div>
 </div>
-
 <script>
-    document.getElementById('demo-modal-backdrop').addEventListener('click', function(e) {
-        if (e.target === this) closeDemoModal();
-    });
-    const _backdrop = document.getElementById('demo-modal-backdrop');
-    document.getElementById('demo-modal-backdrop').classList.add = function(cls) {
-        if (cls === 'open') { _backdrop.style.opacity='1'; _backdrop.style.visibility='visible'; }
-        DOMTokenList.prototype.add.call(this, cls);
-    };
-    document.getElementById('demo-modal-backdrop').classList.remove = function(cls) {
-        if (cls === 'open') { _backdrop.style.opacity='0'; _backdrop.style.visibility='hidden'; }
-        DOMTokenList.prototype.remove.call(this, cls);
-    };
+function closeDemoModal() { document.getElementById('demo-modal-backdrop').classList.remove('open'); }
+document.getElementById('demo-modal-backdrop').addEventListener('click', function(e) { if(e.target===this) closeDemoModal(); });
+const _bd = document.getElementById('demo-modal-backdrop');
+_bd.classList.add = function(cls) { if(cls==='open'){_bd.style.opacity='1';_bd.style.visibility='visible';} DOMTokenList.prototype.add.call(this,cls); };
+_bd.classList.remove = function(cls) { if(cls==='open'){_bd.style.opacity='0';_bd.style.visibility='hidden';} DOMTokenList.prototype.remove.call(this,cls); };
 </script>
-
 </body>
 </html>
