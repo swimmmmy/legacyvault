@@ -6,6 +6,7 @@
     <title>LegacyVault</title>
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Barlow+Condensed:wght@800;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { width: 100%; height: 100%; min-height: 100%; background: #0d1a12; }
@@ -74,7 +75,7 @@
         .sheet-row { display: flex; justify-content: space-between; gap: 1rem; padding: .8rem 0; border-bottom: .0625rem solid rgba(255,255,255,.08); }
         .sheet-row strong { color: #fff; text-align: right; }
 
-        /* Will / Letters section labels */
+        /* Will section labels */
         .section-label { color: rgba(255,255,255,.45); font-size: .7rem; letter-spacing: .1em; font-family: Arial, sans-serif; text-transform: uppercase; margin-bottom: .5rem; margin-top: 1.2rem; }
         .will-textarea { width: 100%; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.15); border-radius: .5rem; padding: .65rem .8rem; color: #fff; font-family: Arial, sans-serif; font-size: .88rem; line-height: 1.6; resize: vertical; min-height: 4.5rem; outline: none; transition: border-color .2s; }
         .will-textarea:focus { border-color: rgba(255,255,255,.4); }
@@ -83,13 +84,13 @@
         .will-save-btn:hover { background: rgba(0,0,0,.8); border-color: rgba(255,255,255,.4); }
         .will-status { margin-top: .5rem; font-size: .75rem; color: rgba(255,255,255,.4); text-align: center; font-family: Arial, sans-serif; }
 
-        /* Heir cards for multi-beneficiary */
+        /* Heir cards */
         .heir-rows { display: flex; flex-direction: column; gap: .6rem; margin-bottom: .5rem; }
-        .heir-card { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-radius: .55rem; padding: .65rem .75rem; display: flex; flex-direction: column; gap: .45rem; }
+        .heir-card { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-radius: .55rem; padding: .65rem .75rem; display: flex; flex-direction: column; gap: .4rem; }
         .heir-card-row1 { display: flex; gap: .45rem; align-items: center; }
         .heir-card-row2 { display: flex; gap: .45rem; align-items: center; }
-        .heir-card input[type="text"], .heir-card input[type="number"] { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.15); border-radius: .35rem; padding: .4rem .55rem; color: #fff; font-size: .78rem; outline: none; min-width: 0; }
-        .heir-card input[type="text"]:focus, .heir-card input[type="number"]:focus { border-color: rgba(255,255,255,.4); }
+        .heir-card input[type="text"], .heir-card input[type="number"], .heir-card input[type="email"] { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.15); border-radius: .35rem; padding: .4rem .55rem; color: #fff; font-size: .78rem; outline: none; min-width: 0; }
+        .heir-card input[type="text"]:focus, .heir-card input[type="number"]:focus, .heir-card input[type="email"]:focus { border-color: rgba(255,255,255,.4); }
         .heir-card select { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.15); border-radius: .35rem; padding: .4rem .5rem; color: rgba(255,255,255,.8); font-family: Arial, sans-serif; font-size: .75rem; outline: none; cursor: pointer; }
         .heir-card select option { background: #1a2e1e; }
         .heir-pct-input { width: 3.2rem !important; text-align: center; color: #fff !important; font-weight: 700; }
@@ -102,23 +103,10 @@
         .pct-total.warn { color: #ff9f43; }
         .pct-total.ok { color: #5fc87a; }
 
-        /* Letters / ghost messages */
-        .letter-list { display: flex; flex-direction: column; gap: .75rem; margin-bottom: .75rem; }
-        .letter-card { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: .6rem; padding: .75rem .9rem; }
-        .letter-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: .4rem; }
-        .letter-card-to { color: #F5C842; font-family: 'Caveat', cursive; font-size: 1.05rem; }
-        .letter-card-date { color: rgba(255,255,255,.4); font-size: .7rem; font-family: Arial, sans-serif; }
-        .letter-card-preview { color: rgba(255,255,255,.55); font-size: .8rem; font-family: Arial, sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .letter-card-actions { display: flex; gap: .4rem; margin-top: .5rem; }
-        .letter-action-btn { font-size: .7rem; font-family: Arial, sans-serif; padding: .25rem .6rem; border-radius: .3rem; border: 1px solid rgba(255,255,255,.15); background: transparent; color: rgba(255,255,255,.5); cursor: pointer; }
-        .letter-action-btn:hover { color: #fff; border-color: rgba(255,255,255,.4); }
-        .letter-action-btn.del:hover { color: #ff5c5c; border-color: #ff5c5c; }
-
-        /* New letter form */
-        .new-letter-form { background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.1); border-radius: .7rem; padding: .9rem; }
-        .new-letter-form .form-row { display: flex; gap: .5rem; margin-bottom: .5rem; }
-        .new-letter-form input { flex: 1; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.15); border-radius: .4rem; padding: .5rem .7rem; color: #fff; font-family: Arial, sans-serif; font-size: .82rem; outline: none; min-width: 0; }
-        .new-letter-form input::placeholder { color: rgba(255,255,255,.25); }
+        /* Settings inputs (ABOUT sheet) */
+        .settings-input { width: 100%; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.15); border-radius: .35rem; padding: .5rem .7rem; color: #fff; font-family: Arial, sans-serif; font-size: .82rem; outline: none; margin-bottom: .4rem; }
+        .settings-input:focus { border-color: rgba(255,255,255,.4); }
+        .settings-input::placeholder { color: rgba(255,255,255,.25); }
 
         /* State colours */
         body.state-warning .timer-box, body.state-warning .status-item.state-safe { color: #ff9f43; }
@@ -207,7 +195,6 @@
     <button class="status-item" type="button" data-sheet="assets">ASSETS</button>
     <button class="status-item" type="button" data-sheet="beneficiaries">BENEFICIARIES</button>
     <button class="status-item state-safe" type="button" data-sheet="protection">PROTECTED</button>
-    <button class="status-item" type="button" data-sheet="letters">LETTERS</button>
     <button class="status-item" type="button" data-sheet="about">ABOUT</button>
 </div>
 
@@ -237,9 +224,10 @@ let contract = null, contractReadOnly = null, userAddress = null, pollInterval =
 const connectButtonMarkup = document.getElementById('mm-btn').innerHTML;
 
 /* ── localStorage keys ─────────────────────────── */
-const WILL_KEY  = 'lv_will_v2';
-const HEIRS_KEY = 'lv_heirs_v2';
-const LTRS_KEY  = 'lv_letters_v2';
+const WILL_KEY   = 'lv_will_v2';
+const HEIRS_KEY  = 'lv_heirs_v2';
+const SCHED_KEY  = 'lv_scheduled_v1';
+const EJSCONF_KEY = 'lv_emailjs_config';
 
 /* ── Will helpers ──────────────────────────────── */
 function loadWill() {
@@ -247,18 +235,125 @@ function loadWill() {
 }
 function saveWill(data) { localStorage.setItem(WILL_KEY, JSON.stringify(data)); }
 
-/* ── Heirs helpers (multi %) ───────────────────── */
+/* ── Heirs helpers ─────────────────────────────── */
 function loadHeirs() {
-    try { return JSON.parse(localStorage.getItem(HEIRS_KEY)) || [{ name: '', wallet: '', pct: 100, timing: 'immediately', timingVal: '', timingCustom: '' }]; }
-    catch { return [{ name: '', wallet: '', pct: 100, timing: 'immediately', timingVal: '', timingCustom: '' }]; }
+    try { return JSON.parse(localStorage.getItem(HEIRS_KEY)) || [{ name: '', email: '', wallet: '', pct: 100, timing: 'immediately', timingVal: '', timingCustom: '' }]; }
+    catch { return [{ name: '', email: '', wallet: '', pct: 100, timing: 'immediately', timingVal: '', timingCustom: '' }]; }
 }
 function saveHeirs(heirs) { localStorage.setItem(HEIRS_KEY, JSON.stringify(heirs)); }
 
-/* ── Letters helpers ───────────────────────────── */
-function loadLetters() {
-    try { return JSON.parse(localStorage.getItem(LTRS_KEY)) || []; } catch { return []; }
+/* ── EmailJS config ────────────────────────────── */
+function getEmailjsConfig() {
+    try { return JSON.parse(localStorage.getItem(EJSCONF_KEY)) || {}; } catch { return {}; }
 }
-function saveLetters(letters) { localStorage.setItem(LTRS_KEY, JSON.stringify(letters)); }
+
+/* ── Scheduled messages ────────────────────────── */
+function getScheduled() {
+    try { return JSON.parse(localStorage.getItem(SCHED_KEY)) || []; } catch { return []; }
+}
+function saveScheduled(arr) { localStorage.setItem(SCHED_KEY, JSON.stringify(arr)); }
+
+/* ── Parse demo delay string ───────────────────── */
+// e.g. "1 minute", "30 seconds", "2 hours"
+function parseCustomDelay(str) {
+    if (!str) return null;
+    const m = str.match(/(\d+(?:\.\d+)?)\s*(sec|second|min|minute|hour)/i);
+    if (!m) return null;
+    const val = parseFloat(m[1]);
+    const unit = m[2].toLowerCase();
+    if (unit.startsWith('sec')) return val * 1000;
+    if (unit.startsWith('min')) return val * 60 * 1000;
+    if (unit.startsWith('hour')) return val * 3600 * 1000;
+    return null;
+}
+
+/* ── Send email via EmailJS ────────────────────── */
+async function sendEmailNow(heir, message) {
+    const cfg = getEmailjsConfig();
+    if (!cfg.serviceId || !cfg.templateId || !cfg.publicKey) {
+        console.warn('EmailJS not configured');
+        return { ok: false, reason: 'not_configured' };
+    }
+    if (!heir.email) {
+        return { ok: false, reason: 'no_email' };
+    }
+    try {
+        await emailjs.send(cfg.serviceId, cfg.templateId, {
+            to_email: heir.email,
+            to_name:  heir.name || 'Beneficiary',
+            from_name: cfg.fromName || 'LegacyVault',
+            message:  message,
+            wallet:   heir.wallet || 'N/A',
+            percentage: (heir.pct || 0) + '%'
+        }, cfg.publicKey);
+        return { ok: true };
+    } catch(e) {
+        console.error('EmailJS error', e);
+        return { ok: false, reason: e.text || e.message || 'send_error' };
+    }
+}
+
+/* ── Schedule or send a message to one heir ────── */
+async function scheduleOrSendHeir(heir, message) {
+    const timing = heir.timing || 'immediately';
+
+    if (timing === 'immediately') {
+        const res = await sendEmailNow(heir, message);
+        return res.ok ? 'sent' : ('error:' + res.reason);
+    }
+
+    let delayMs = null;
+
+    if (timing === 'years') {
+        const years = parseFloat(heir.timingVal) || 1;
+        delayMs = years * 365.25 * 24 * 3600 * 1000;
+    } else if (timing === 'age') {
+        // age-based: store only, no calculable delay
+        delayMs = null;
+    } else if (timing === 'custom') {
+        delayMs = parseCustomDelay(heir.timingCustom);
+    }
+
+    if (delayMs !== null && delayMs > 0) {
+        const sendAt = Date.now() + delayMs;
+        const scheduled = getScheduled();
+        // Overwrite any existing unsent schedule for this heir email
+        const filtered = scheduled.filter(s => !(s.heir.email === heir.email && !s.sent));
+        const id = Date.now() + Math.random();
+        filtered.push({ id, heir: { ...heir }, message, sendAt, sent: false, createdAt: Date.now() });
+        saveScheduled(filtered);
+
+        // If delay ≤ 30 min, set a live setTimeout as well (handles tab staying open)
+        if (delayMs <= 30 * 60 * 1000) {
+            setTimeout(async () => {
+                const sc = getScheduled();
+                const item = sc.find(s => s.id === id);
+                if (item && !item.sent) {
+                    const res = await sendEmailNow(item.heir, item.message);
+                    if (res.ok) { item.sent = true; saveScheduled(sc); }
+                }
+            }, delayMs);
+        }
+        return 'scheduled';
+    }
+
+    // age-based timing or unparseable custom: just store will data, can't schedule
+    return 'saved_only';
+}
+
+/* ── Check scheduled messages on load ──────────── */
+async function processScheduled() {
+    const scheduled = getScheduled();
+    const now = Date.now();
+    let changed = false;
+    for (const item of scheduled) {
+        if (!item.sent && item.sendAt <= now) {
+            const res = await sendEmailNow(item.heir, item.message);
+            if (res.ok) { item.sent = true; changed = true; }
+        }
+    }
+    if (changed) saveScheduled(scheduled);
+}
 
 /* ── Sheet data ────────────────────────────────── */
 const sheetData = {
@@ -269,16 +364,48 @@ const sheetData = {
         <div class="sheet-row"><span>Heartbeat window</span><strong>60 seconds</strong></div>
         <div class="sheet-row"><span>Grace period</span><strong>10 seconds</strong></div>
         <div class="sheet-row"><span>Transfer status</span><strong id="sheet-transfer-state">Not scheduled</strong></div>`
-    },
-    about: {
-        title: 'About LegacyVault',
-        content: `
-        <div class="sheet-row"><span>서비스</span><strong>블록체인 기반 디지털 유산 관리</strong></div>
-        <div class="sheet-row" style="display:block;padding:.9rem 0;border-bottom:1px solid rgba(255,255,255,.08)"><p style="color:rgba(255,255,255,.75);font-size:.88rem;line-height:1.75">LegacyVault는 이더리움 스마트 컨트랙트를 통해 디지털 자산의 상속을 자동화합니다. 사용자가 주기적으로 생존 확인(heartbeat)을 하지 않으면, 미리 지정된 수혜자에게 자산이 자동으로 이전됩니다.</p></div>
-        <div class="sheet-row" style="display:block;padding:.9rem 0;border-bottom:1px solid rgba(255,255,255,.08)"><p style="color:rgba(255,255,255,.75);font-size:.88rem;line-height:1.75">유언장 작성, 타임캡슐 편지, 다수 수혜자 분배 의향을 하나의 공간에서 관리할 수 있습니다.</p></div>
-        <div class="sheet-row"><span>기술 스택</span><strong>Ethereum · Solidity · MetaMask</strong></div>
-        <div class="sheet-row"><span>제작자</span><strong>SWIMMMMY</strong></div>`
     }
+};
+
+/* ── Build ABOUT sheet (dynamic — loads EmailJS config) */
+function buildAboutContent() {
+    const cfg = getEmailjsConfig();
+    return `
+    <div class="sheet-row"><span>서비스</span><strong>블록체인 기반 디지털 유산 관리</strong></div>
+    <div class="sheet-row" style="display:block;padding:.9rem 0;border-bottom:1px solid rgba(255,255,255,.08)"><p style="color:rgba(255,255,255,.75);font-size:.88rem;line-height:1.75">LegacyVault는 이더리움 스마트 컨트랙트를 통해 디지털 자산의 상속을 자동화합니다. 사용자가 주기적으로 생존 확인(heartbeat)을 하지 않으면, 미리 지정된 수혜자에게 자산이 자동으로 이전됩니다.</p></div>
+    <div class="sheet-row"><span>기술 스택</span><strong>Ethereum · Solidity · MetaMask</strong></div>
+    <div class="sheet-row"><span>제작자</span><strong>SWIMMMMY</strong></div>
+
+    <div class="section-label" style="margin-top:1.6rem">Email Delivery Settings</div>
+    <p style="color:rgba(255,255,255,.38);font-size:.76rem;line-height:1.6;margin-bottom:.85rem">
+        Required for message delivery. Free account at
+        <a href="https://emailjs.com" target="_blank" style="color:rgba(255,255,255,.55);text-decoration:underline">emailjs.com</a>
+        → Add Email Service → Create Template → copy IDs below.
+    </p>
+    <input type="text" id="ejs-service"  class="settings-input" placeholder="Service ID  (e.g. service_xxxxxx)" value="${cfg.serviceId || ''}">
+    <input type="text" id="ejs-template" class="settings-input" placeholder="Template ID (e.g. template_xxxxxx)" value="${cfg.templateId || ''}">
+    <input type="text" id="ejs-pubkey"   class="settings-input" placeholder="Public Key" value="${cfg.publicKey || ''}">
+    <input type="text" id="ejs-fromname" class="settings-input" placeholder="Your name (shown as sender)" value="${cfg.fromName || ''}">
+    <button class="will-save-btn" onclick="saveEmailjsConfig()" style="margin-top:.5rem">Save Email Settings</button>
+    <div class="will-status" id="ejs-status"></div>
+
+    <div class="section-label" style="margin-top:1.4rem">EmailJS Template Variables</div>
+    <p style="color:rgba(255,255,255,.35);font-size:.74rem;line-height:1.75;font-family:monospace">
+        {{to_email}} · {{to_name}} · {{from_name}}<br>
+        {{message}} · {{wallet}} · {{percentage}}
+    </p>`;
+}
+
+window.saveEmailjsConfig = function() {
+    const cfg = {
+        serviceId:  document.getElementById('ejs-service')?.value.trim()  || '',
+        templateId: document.getElementById('ejs-template')?.value.trim() || '',
+        publicKey:  document.getElementById('ejs-pubkey')?.value.trim()   || '',
+        fromName:   document.getElementById('ejs-fromname')?.value.trim() || ''
+    };
+    localStorage.setItem(EJSCONF_KEY, JSON.stringify(cfg));
+    const el = document.getElementById('ejs-status');
+    if (el) { el.textContent = '✓ Saved'; el.style.color = '#5fc87a'; setTimeout(() => { el.textContent = ''; }, 2500); }
 };
 
 /* ── Build a single heir card ──────────────────── */
@@ -296,13 +423,17 @@ function buildHeirCard(h, i) {
     return `<div class="heir-card" id="heir-row-${i}">
         <div class="heir-card-row1">
             <input type="text" placeholder="Name" value="${h.name||''}"
-                oninput="updateHeirField(${i},'name',this.value)" style="flex:1">
-            <input type="text" placeholder="0x wallet address" value="${h.wallet||''}"
-                oninput="updateHeirField(${i},'wallet',this.value)" style="flex:2;font-family:monospace;font-size:.7rem">
+                oninput="updateHeirField(${i},'name',this.value)" style="flex:1.2">
+            <input type="text" placeholder="0x wallet" value="${h.wallet||''}"
+                oninput="updateHeirField(${i},'wallet',this.value)" style="flex:2;font-family:monospace;font-size:.68rem">
             <input type="number" class="heir-pct-input" min="0" max="100" value="${h.pct??''}" placeholder="%"
                 oninput="updateHeirField(${i},'pct',+this.value)">
             <span class="pct-unit">%</span>
             <button class="remove-heir" onclick="removeHeirRow(${i})">×</button>
+        </div>
+        <div class="heir-card-row1">
+            <input type="email" placeholder="Email address (for message delivery)" value="${h.email||''}"
+                oninput="updateHeirField(${i},'email',this.value)" style="flex:1;font-size:.75rem">
         </div>
         <div class="heir-card-row2">
             <span style="color:rgba(255,255,255,.4);font-size:.72rem;font-family:Arial;flex-shrink:0">Transfer</span>
@@ -310,7 +441,7 @@ function buildHeirCard(h, i) {
             ${showN ? `<input type="number" min="0" placeholder="${nLabel}" value="${h.timingVal||''}"
                 oninput="updateHeirField(${i},'timingVal',+this.value)"
                 style="width:4rem">` : ''}
-            ${showCustom ? `<input type="text" placeholder="e.g. when she turns 25" value="${h.timingCustom||''}"
+            ${showCustom ? `<input type="text" placeholder="e.g. 1 minute · 2 hours · when she turns 25" value="${h.timingCustom||''}"
                 oninput="updateHeirField(${i},'timingCustom',this.value)"
                 style="flex:1">` : ''}
         </div>
@@ -340,40 +471,8 @@ function buildBeneficiariesContent(heirAddr, balPOL) {
     <div class="section-label" style="margin-top:1rem">Message to Beneficiaries</div>
     <textarea class="will-textarea" id="will-msg">${will.msg || ''}</textarea>
 
-    <button class="will-save-btn" onclick="saveWillData()">Save</button>
+    <button class="will-save-btn" id="will-save-btn" onclick="saveWillData()">Save</button>
     <div class="will-status" id="will-status"></div>`;
-}
-
-/* ── Build letters sheet HTML ──────────────────── */
-function buildLettersContent() {
-    const letters = loadLetters();
-    const listHTML = letters.length ? letters.map((l, i) => `
-        <div class="letter-card">
-            <div class="letter-card-header">
-                <span class="letter-card-to">To. ${l.to || '—'}</span>
-                <span class="letter-card-date">${l.date ? '📅 ' + l.date : 'No date set'}</span>
-            </div>
-            <div class="letter-card-preview">${l.body || ''}</div>
-            <div class="letter-card-actions">
-                <button class="letter-action-btn" onclick="editLetter(${i})">Edit</button>
-                <button class="letter-action-btn del" onclick="deleteLetter(${i})">Delete</button>
-            </div>
-        </div>`).join('') : `<p style="color:rgba(255,255,255,.3);font-size:.85rem;text-align:center;padding:1.2rem 0">No letters yet.</p>`;
-
-    return `
-    <p style="color:rgba(255,255,255,.4);font-size:.8rem;margin-bottom:1rem;line-height:1.6">Messages to be delivered to specific people on a chosen date after you're gone.</p>
-    <div class="letter-list">${listHTML}</div>
-
-    <div class="section-label">New Letter</div>
-    <div class="new-letter-form">
-        <div class="form-row">
-            <input type="text" id="letter-to" placeholder="To (name or relationship)" style="flex:1.2">
-            <input type="date" id="letter-date" style="flex:1;color-scheme:dark">
-        </div>
-        <textarea class="will-textarea" id="letter-body" style="min-height:6rem"></textarea>
-        <button class="will-save-btn" onclick="saveLetter()">Save Letter</button>
-        <div class="will-status" id="letter-status"></div>
-    </div>`;
 }
 
 /* ── Heir row mutations ────────────────────────── */
@@ -390,14 +489,13 @@ window.updateHeirField = function(i, field, val) {
 
 window.updateHeirTiming = function(i, val) {
     const heirs = loadHeirs(); heirs[i].timing = val; saveHeirs(heirs);
-    // re-render just that card
     const card = document.getElementById(`heir-row-${i}`);
     if (card) { const tmp = document.createElement('div'); tmp.innerHTML = buildHeirCard(heirs[i], i); card.replaceWith(tmp.firstChild); }
 };
 
 window.addHeirRow = function() {
     const heirs = loadHeirs();
-    heirs.push({ name: '', wallet: '', pct: 0, timing: 'immediately', timingVal: '', timingCustom: '' });
+    heirs.push({ name: '', email: '', wallet: '', pct: 0, timing: 'immediately', timingVal: '', timingCustom: '' });
     saveHeirs(heirs);
     const container = document.getElementById('heir-rows');
     if (!container) return;
@@ -416,52 +514,54 @@ window.removeHeirRow = function(i) {
     refreshPctTotal();
 };
 
-/* ── Will save ─────────────────────────────────── */
-window.saveWillData = function() {
+/* ── Will save + send/schedule messages ─────────── */
+window.saveWillData = async function() {
     const msg = document.getElementById('will-msg')?.value || '';
     saveWill({ msg, savedAt: new Date().toISOString() });
-    const el = document.getElementById('will-status');
-    if (el) { el.textContent = '✓ Saved'; el.style.color = '#F5C842'; setTimeout(() => { el.textContent = ''; }, 2000); }
-};
 
-/* ── Letter save/edit/delete ───────────────────── */
-window.saveLetter = function() {
-    const to   = document.getElementById('letter-to')?.value.trim()   || '';
-    const date = document.getElementById('letter-date')?.value         || '';
-    const body = document.getElementById('letter-body')?.value.trim()  || '';
-    if (!body) { const s = document.getElementById('letter-status'); if (s) { s.textContent = 'Write something first.'; s.style.color='#ff5c5c'; } return; }
-    const letters = loadLetters();
-    const editIdx = window._editingLetterIdx;
-    if (editIdx !== undefined) {
-        letters[editIdx] = { to, date, body };
-        delete window._editingLetterIdx;
-    } else {
-        letters.push({ to, date, body });
+    const btn = document.getElementById('will-save-btn');
+    const statusEl = document.getElementById('will-status');
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+
+    const heirs = loadHeirs();
+    const heirsWithEmail = heirs.filter(h => h.email && h.email.trim());
+
+    if (!msg.trim() || heirsWithEmail.length === 0) {
+        if (btn) { btn.disabled = false; btn.textContent = 'Save'; }
+        if (statusEl) { statusEl.textContent = '✓ Saved'; statusEl.style.color = '#F5C842'; setTimeout(() => { statusEl.textContent = ''; }, 2000); }
+        return;
     }
-    saveLetters(letters);
-    document.getElementById('sheet-content').innerHTML = buildLettersContent();
-    const s = document.getElementById('letter-status');
-    if (s) { s.textContent = '✓ Saved'; s.style.color='#F5C842'; }
-};
 
-window.editLetter = function(i) {
-    const letters = loadLetters();
-    const l = letters[i];
-    window._editingLetterIdx = i;
-    const toEl   = document.getElementById('letter-to');
-    const dateEl = document.getElementById('letter-date');
-    const bodyEl = document.getElementById('letter-body');
-    if (toEl)   toEl.value   = l.to   || '';
-    if (dateEl) dateEl.value = l.date || '';
-    if (bodyEl) bodyEl.value = l.body || '';
-    bodyEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-};
+    const cfg = getEmailjsConfig();
+    if (!cfg.serviceId || !cfg.templateId || !cfg.publicKey) {
+        if (btn) { btn.disabled = false; btn.textContent = 'Save'; }
+        if (statusEl) { statusEl.textContent = '⚠ Email not configured — go to ABOUT to set up EmailJS'; statusEl.style.color = '#ff9f43'; setTimeout(() => { statusEl.textContent = ''; }, 5000); }
+        saveWill({ msg, savedAt: new Date().toISOString() });
+        return;
+    }
 
-window.deleteLetter = function(i) {
-    const letters = loadLetters();
-    letters.splice(i, 1);
-    saveLetters(letters);
-    document.getElementById('sheet-content').innerHTML = buildLettersContent();
+    const results = [];
+    for (const heir of heirsWithEmail) {
+        const result = await scheduleOrSendHeir(heir, msg);
+        results.push({ name: heir.name || heir.email, result });
+    }
+
+    if (btn) { btn.disabled = false; btn.textContent = 'Save'; }
+
+    const sent      = results.filter(r => r.result === 'sent').map(r => r.name);
+    const scheduled = results.filter(r => r.result === 'scheduled').map(r => r.name);
+    const errors    = results.filter(r => r.result.startsWith('error')).map(r => r.name);
+
+    let parts = [];
+    if (sent.length)      parts.push(`✓ Sent: ${sent.join(', ')}`);
+    if (scheduled.length) parts.push(`⏰ Scheduled: ${scheduled.join(', ')}`);
+    if (errors.length)    parts.push(`⚠ Failed: ${errors.join(', ')}`);
+
+    if (statusEl) {
+        statusEl.textContent = parts.join(' · ') || '✓ Saved';
+        statusEl.style.color = errors.length ? '#ff9f43' : '#5fc87a';
+        setTimeout(() => { statusEl.textContent = ''; }, 6000);
+    }
 };
 
 /* ── Heartbeat visual ──────────────────────────── */
@@ -577,10 +677,6 @@ async function setConnectedState(addr) {
         title: 'Beneficiaries',
         content: buildBeneficiariesContent(heirAddr, balPOL)
     };
-    sheetData.letters = {
-        title: 'Letters',
-        content: buildLettersContent()
-    };
 
     document.querySelector('.timer-wrap').classList.add('visible');
     document.querySelector('.status-bar').style.cssText += 'opacity:1;visibility:visible;';
@@ -606,14 +702,12 @@ function setDisconnectedState() {
 
 /* ── Sheet open/close ──────────────────────────── */
 function openSheet(type) {
-    // Re-build dynamic sheets each time
-    if (type === 'beneficiaries' && sheetData.beneficiaries) {
-        // already built
-    } else if (type === 'letters') {
-        if (!sheetData.letters) sheetData.letters = { title: 'Letters', content: buildLettersContent() };
-        sheetData.letters.content = buildLettersContent();
+    let d;
+    if (type === 'about') {
+        d = { title: 'About LegacyVault', content: buildAboutContent() };
+    } else {
+        d = sheetData[type];
     }
-    const d = sheetData[type];
     if (!d) return;
     document.getElementById('sheet-title').textContent   = d.title;
     document.getElementById('sheet-content').innerHTML   = d.content;
@@ -643,6 +737,7 @@ async function connectWallet() {
 /* ── Init ──────────────────────────────────────── */
 window.addEventListener('load', () => {
     setupInteractiveHeartbeat();
+    processScheduled(); // check for overdue scheduled messages
     document.querySelectorAll('[data-sheet]').forEach(b => b.addEventListener('click', () => openSheet(b.dataset.sheet)));
     document.getElementById('sheet-close').addEventListener('click', closeSheet);
     document.getElementById('bottom-sheet').addEventListener('click', e => { if(e.target.id==='bottom-sheet') closeSheet(); });
