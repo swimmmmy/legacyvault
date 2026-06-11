@@ -209,7 +209,7 @@
 </div>
 
 <script>
-const CONTRACT_ADDRESS = '0xA553F0EA17becc8480dac306f244E7de46c3Ac93';
+const CONTRACT_ADDRESS = '0xCAc09e57c5e3596D87639387076D1a3B646FDe0b';
 const CONTRACT_ABI = [
     {"inputs":[{"internalType":"address payable","name":"_heir","type":"address"}],"stateMutability":"payable","type":"constructor"},
     {"inputs":[],"name":"heartbeat","outputs":[],"stateMutability":"nonpayable","type":"function"},
@@ -758,10 +758,8 @@ async function setConnectedState(addr, silent = false) {
     btn.classList.remove('connected');
 
     if (isOwner) {
-        if (!silent) {
-            btn.innerHTML = 'STARTING TIMER...'; btn.disabled = true; copy.textContent = 'Resetting timer...';
-            try { const tx = await contract.heartbeat(); btn.innerHTML = 'CONFIRMING...'; await tx.wait(); } catch(e) {}
-        }
+        btn.innerHTML = 'STARTING TIMER...'; btn.disabled = true; copy.textContent = 'Resetting timer...';
+        try { const tx = await contract.heartbeat(); btn.innerHTML = 'CONFIRMING...'; await tx.wait(); } catch(e) {}
         btn.innerHTML = `I'M STILL HERE`; btn.onclick = confirmHeartbeat; btn.disabled = false; copy.textContent = 'Extend for another 60 seconds';
     } else {
         btn.innerHTML = `HEIR CONNECTED`; btn.disabled = true; copy.textContent = 'Waiting for heartbeat to expire...';
