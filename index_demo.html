@@ -209,7 +209,7 @@
 </div>
 
 <script>
-const CONTRACT_ADDRESS = '0x0696F0B1A1dC9e88822C3d87E3DADB7F79c0a39b';
+const CONTRACT_ADDRESS = '0xA553F0EA17becc8480dac306f244E7de46c3Ac93';
 const CONTRACT_ABI = [
     {"inputs":[{"internalType":"address payable","name":"_heir","type":"address"}],"stateMutability":"payable","type":"constructor"},
     {"inputs":[],"name":"heartbeat","outputs":[],"stateMutability":"nonpayable","type":"function"},
@@ -217,10 +217,11 @@ const CONTRACT_ABI = [
     {"inputs":[],"name":"getStatus","outputs":[{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"timeLeft","type":"uint256"},{"internalType":"bool","name":"isReleased","type":"bool"},{"internalType":"bool","name":"inGrace","type":"bool"}],"stateMutability":"view","type":"function"},
     {"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
     {"inputs":[],"name":"heir","outputs":[{"internalType":"address payable","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"address payable","name":"newHeir","type":"address"}],"name":"setHeir","outputs":[],"stateMutability":"nonpayable","type":"function"},
     {"stateMutability":"payable","type":"receive"}
 ];
 
-let contract = null, contractReadOnly = null, userAddress = null, pollInterval = null;
+let contract = null, contractReadOnly = null, userAddress = null, pollInterval = null, confirmationDone = false;
 const connectButtonMarkup = document.getElementById('mm-btn').innerHTML;
 
 /* ── localStorage keys ─────────────────────────── */
@@ -572,6 +573,22 @@ window.saveWillData = async function() {
     const msg = document.getElementById('will-msg')?.value || '';
     saveWill({ msg, savedAt: new Date().toISOString() });
 
+    // ── Sync first heir wallet address to smart contract ──
+    const heirsNow = loadHeirs();
+    const firstWallet = heirsNow[0]?.wallet?.trim();
+    if (contract && firstWallet && ethers.isAddress(firstWallet)) {
+        const statusEl = document.getElementById('will-status');
+        try {
+            if (statusEl) { statusEl.textContent = '⛓ 컨트랙트에 수혜자 주소 등록 중...'; statusEl.style.color = '#F5C842'; }
+            const tx = await contract.setHeir(firstWallet);
+            await tx.wait();
+            if (statusEl) { statusEl.textContent = '✓ 블록체인에 저장 완료'; statusEl.style.color = '#5fc87a'; setTimeout(() => { statusEl.textContent = ''; }, 3000); }
+        } catch(e) {
+            if (statusEl) { statusEl.textContent = e.code === 4001 ? '취소됨' : '⚠ 컨트랙트 업데이트 실패 — 로컬 저장은 완료'; statusEl.style.color = '#ff9f43'; setTimeout(() => { statusEl.textContent = ''; }, 4000); }
+        }
+        return; // status already handled above
+    }
+
     const btn = document.getElementById('will-save-btn');
     const statusEl = document.getElementById('will-status');
     if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
@@ -671,7 +688,11 @@ async function pollContractStatus() {
             stateLabel.textContent = 'HEARTBEAT EXPIRED'; display.textContent = 'TRANSFER PENDING'; dateLabel.textContent = 'Grace period active';
             const ownerAddr = await contractReadOnly.owner();
             if (userAddress && userAddress.toLowerCase() !== ownerAddr.toLowerCase()) {
-                btn.textContent = 'RELEASE ASSETS'; btn.onclick = releaseAssets; btn.disabled = false; copy.textContent = 'Grace period - claim inheritance';
+                if (confirmationDone) {
+                    btn.textContent = 'RELEASE ASSETS'; btn.onclick = releaseAssets; btn.disabled = false; copy.textContent = 'Grace period - claim inheritance';
+                } else {
+                    btn.textContent = 'CONFIRM PASSING'; btn.onclick = showConfirmModal; btn.disabled = false; copy.textContent = 'Please confirm before releasing assets';
+                }
             }
             if (!expiryEmailSent) { expiryEmailSent = true; sendExpiryEmails(); }
         } else if (secs <= 15 && secs > 0) {
@@ -691,11 +712,26 @@ async function confirmHeartbeat() {
     try {
         btn.textContent = 'CONFIRMING...'; btn.disabled = true;
         const tx = await contract.heartbeat(); await tx.wait();
+        await new Promise(r => setTimeout(r, 2000)); // wait for RPC node to reflect new block
         hbEl.classList.remove('confirmed'); void hbEl.offsetWidth; hbEl.classList.add('confirmed');
         btn.textContent = 'HEARTBEAT CONFIRMED'; document.getElementById('checkin-copy').textContent = 'Resets in 60s';
         setTimeout(() => { btn.textContent = `I'M STILL HERE`; btn.disabled = false; document.getElementById('checkin-copy').textContent = 'Extend for another 60 seconds'; hbEl.classList.remove('confirmed'); }, 1800);
         pollContractStatus();
     } catch(e) { btn.textContent = `I'M STILL HERE`; btn.disabled = false; if(e.code!==4001) alert('트랜잭션 실패: '+(e.shortMessage||e.message)); }
+}
+
+function showConfirmModal() {
+    document.getElementById('confirm-modal-backdrop').classList.add('open');
+}
+function closeConfirmModal() {
+    document.getElementById('confirm-modal-backdrop').classList.remove('open');
+}
+function confirmPassing() {
+    confirmationDone = true;
+    closeConfirmModal();
+    const btn = document.getElementById('mm-btn');
+    btn.textContent = 'RELEASE ASSETS'; btn.onclick = releaseAssets; btn.disabled = false;
+    document.getElementById('checkin-copy').textContent = 'Grace period - claim inheritance';
 }
 
 async function releaseAssets() {
@@ -707,7 +743,7 @@ async function releaseAssets() {
     } catch(e) { btn.textContent = 'RELEASE ASSETS'; btn.disabled = false; if(e.code!==4001) alert('트랜잭션 실패: '+(e.shortMessage||e.message)); }
 }
 
-async function setConnectedState(addr) {
+async function setConnectedState(addr, silent = false) {
     userAddress = addr;
     const btn  = document.getElementById('mm-btn');
     const copy = document.getElementById('checkin-copy');
@@ -739,8 +775,10 @@ async function setConnectedState(addr) {
     btn.classList.remove('connected');
 
     if (isOwner) {
-        btn.innerHTML = 'STARTING TIMER...'; btn.disabled = true; copy.textContent = 'Resetting timer...';
-        try { const tx = await contract.heartbeat(); btn.innerHTML = 'CONFIRMING...'; await tx.wait(); } catch(e) {}
+        if (!silent) {
+            btn.innerHTML = 'STARTING TIMER...'; btn.disabled = true; copy.textContent = 'Resetting timer...';
+            try { const tx = await contract.heartbeat(); btn.innerHTML = 'CONFIRMING...'; await tx.wait(); } catch(e) {}
+        }
         btn.innerHTML = `I'M STILL HERE`; btn.onclick = confirmHeartbeat; btn.disabled = false; copy.textContent = 'Extend for another 60 seconds';
     } else {
         btn.innerHTML = `HEIR CONNECTED`; btn.disabled = true; copy.textContent = 'Waiting for heartbeat to expire...';
@@ -799,10 +837,29 @@ window.addEventListener('load', () => {
     document.getElementById('bottom-sheet').addEventListener('click', e => { if(e.target.id==='bottom-sheet') closeSheet(); });
     document.addEventListener('keydown', e => { if(e.key==='Escape') closeSheet(); });
     if (window.ethereum) {
-        window.ethereum.request({method:'eth_accounts'}).then(a => { if(a[0]) setConnectedState(a[0]); });
+        window.ethereum.request({method:'eth_accounts'}).then(a => { if(a[0]) setConnectedState(a[0], true); });
         window.ethereum.on('accountsChanged', a => { if(a[0]) setConnectedState(a[0]); else setDisconnectedState(); });
     }
 });
+</script>
+
+<!-- Confirm passing modal -->
+<div id="confirm-modal-backdrop" style="position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.65);opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s">
+    <div style="width:23rem;background:#111;border:1px solid rgba(245,200,66,.25);border-radius:1.25rem;padding:2rem 1.75rem 1.5rem;box-shadow:0 1.5rem 4rem rgba(0,0,0,.7);text-align:center">
+        <div style="font-size:2.2rem;margin-bottom:.75rem">🕯️</div>
+        <div style="font-family:'Caveat',cursive;font-weight:700;font-size:1.4rem;color:#F5C842;margin-bottom:.5rem">사망 확인</div>
+        <div style="font-family:Arial,sans-serif;font-size:.84rem;color:rgba(255,255,255,.6);line-height:1.6;margin-bottom:1.5rem">오너가 사망했음을 확인합니다.<br>확인 후 자산이 이전됩니다.<br>이 작업은 취소할 수 없습니다.</div>
+        <div style="display:flex;gap:.75rem">
+            <button onclick="closeConfirmModal()" style="flex:1;padding:.75rem;border-radius:.75rem;border:1px solid rgba(255,255,255,.18);background:transparent;color:rgba(255,255,255,.7);font-family:Arial,sans-serif;font-size:.88rem;font-weight:600;cursor:pointer">취소</button>
+            <button onclick="confirmPassing()" style="flex:1;padding:.75rem;border-radius:.75rem;border:none;background:rgba(245,200,66,.15);border:1px solid rgba(245,200,66,.5);color:#F5C842;font-family:Arial,sans-serif;font-size:.88rem;font-weight:700;cursor:pointer">확인 · 자산 이전</button>
+        </div>
+    </div>
+</div>
+<script>
+const _cm = document.getElementById('confirm-modal-backdrop');
+_cm.classList.add = function(cls) { if(cls==='open'){_cm.style.opacity='1';_cm.style.visibility='visible';} DOMTokenList.prototype.add.call(this,cls); };
+_cm.classList.remove = function(cls) { if(cls==='open'){_cm.style.opacity='0';_cm.style.visibility='hidden';} DOMTokenList.prototype.remove.call(this,cls); };
+_cm.addEventListener('click', function(e) { if(e.target===this) closeConfirmModal(); });
 </script>
 
 <!-- MetaMask modal -->
